@@ -135,12 +135,14 @@ function logTime(data, date, res){
     console.log(data);
     
     if(!data.hasOwnProperty("grID") || !data.hasOwnProperty("id") || !data.hasOwnProperty("milli")){
+        console.log("ERROR: NOT SENDING COMPLETE DATA");
         res.send("ERROR: NOT SENDING COMPLETE DATA");
+        
     } else {
         console.log(data);
         
         var screenStop = date.getTime();
-        var recMinutes = Math.round(data.milli/6000);
+        var recMinutes = Math.round(data.milli/60000);
         var currHourMin = 0, lastHourMin = 0;
         var newRef = ref.child("/" + data.grID +"/users/" + data.id + "/");
         
