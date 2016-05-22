@@ -210,8 +210,8 @@ app.get("/view",function(){
 
 
 // Create web server
-http.createServer(app).listen(8080, function(){
-	console.log("The server has been opened on port 7777");
+http.createServer(app).listen(80, function(){
+	console.log("The server has been opened on port 80");
 });
 
 // Random functions
