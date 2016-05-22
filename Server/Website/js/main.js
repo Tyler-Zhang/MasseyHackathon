@@ -36,7 +36,9 @@ function getUserData(code){
 	});
 }
 
-
+function viewRoom(rmID){
+	window.location = "room.html?rmID=" + rmID;
+}
 
 
 

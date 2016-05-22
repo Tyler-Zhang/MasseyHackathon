@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, "Website")));
 
 // Post request to create room
 app.post("/createroom", function(req,res){
-//logTime({grID: "2JEXT", id : 1, minutes: 1000}, new Date(), res);
+//logTime({grID: "JVP0T", id : 1, milli: 120000}, new Date());
     //addToRoom({grID: "ZEUQM", name: "poop"},res);
     var body="";
 	req.on("data",function(data){
@@ -46,7 +46,7 @@ app.post("/createroom", function(req,res){
             var newObj = {};
            
             
-            ref.child("/"+code).update({   // Id for the group
+            ref.child("/" + code).update({   // Id for the group
                 userAmt: 0,         // Amount of people in the group 
                  });
             res.send(JSON.stringify({status: "success", grID: code}));
@@ -159,16 +159,19 @@ function logTime(data, date, res){
             lastHourMin = recMinutes%60;
             recMinutes -= lastHourMin;
         }
-        var screenStart = date.getTime() - recMinutes*60*1000;
+        var screenStart = date.getTime() - data.milli;
         var startDate = new Date(screenStart);
-        
+        console.log("recMinutes: %d, currHourMin: %d, lastHourMin: %d, ", recMinutes, currHourMin, lastHourMin);
         newRef.child("/" + date.getMonth() + "/" + date.getDate() + "/" + date.getHours()).once("value", function(snapshot){
             var oldValue = (snapshot.val() == null)? 0 : snapshot.val();
             snapshot.ref.set(oldValue + currHourMin);
             
+            if(lastHourMin == 0)
+                return;
+            
             newRef.child("/" + startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).once("value", function(snapshot){
             var oldValue = (snapshot.val() == null)? 0 : snapshot.val();
-            snapshot.ref.set(oldValue + currHourMin);
+            snapshot.ref.set(oldValue + lastHourMin);
             startDate.add(1).hours();
             while(startDate.getTime() < screenStop){
                 newRef.child(startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).set(60);
