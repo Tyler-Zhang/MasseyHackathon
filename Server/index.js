@@ -63,12 +63,12 @@ app.post("/createroom", function(req,res){
         } else {
             // If request type is an android device
             ref.child("/" + code).update({
-                grID: code,     // Id for the group
                 userAmt: 1,     // Amount of people in the group
-                users: [{       // Arraylist of users in the group
-                    id: 1,      // Individual user ID's
-                    name: data.name, // Name of the individual user 
-                }]
+                users: {
+                    1: {
+                        name: data.name
+                    }
+                }
             });
             res.end(JSON.stringify({status: "success", grID: code, id: 1}));
             console.log("Created new room with code: " + code);            
