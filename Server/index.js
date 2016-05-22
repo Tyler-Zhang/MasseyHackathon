@@ -2,29 +2,26 @@ var http = require("http");         // Launching the HTML server
 var express = require("express");   // Linking to the different web pages
 var path = require("path");         // Joing paths
 var app = express();
-var MongoClient = require('mongodb').MongoClient;
-var assert = require('assert');
+var firebase = require("firebase");
 
-// Connect to mongodb
-var url = 'mongodb://localhost:27017/screenoff';
-var mongoDB;
-MongoClient.connect(url, function(err, db) {
-  assert.equal(null, err);
-  console.log("Connected correctly to screenoff server");
-  mongoDB = db.collection('groups');
+firebase.initializeApp({
+  serviceAccount: "jsonAuth.json",
+  databaseURL: "https://project-3886157552181854094.firebaseio.com/"
 });
 
+var db = firebase.database();
+var ref = db.ref();
+
+
+
 // Database functions
-function dbInsert(obj ,callback) {
-   mongoDB.insertOne( obj, function(err, result) {
-    assert.equal(err, null);
-    callback();
-  });
+function dbInsert(path, obj) {
+    db.ref(path).update(obj);
 };
 
-function dbFind(obj) {
-   var cursor = mongoDB.find(obj);   
-   return cursor.toArray();
+function dbFind(loc, obj, cb) {
+    ref.child(loc).on(obj, cb);
+    
 };
 
 // Web paths
@@ -43,23 +40,23 @@ app.post("/createroom", function(req,res){
 	req.on("end",function(){
         // After recieving data
         var data = JSON.parse(body);
+        console.log(data);
         if(data.type != 'computer' && data.type!= 'android'){
             res.end(JSON.stringify({status: "error", message: "no type available"}));
             return;
         }
-        var code;
-        while(true){
-            code = genChars(5);
-            if(dbFind({rmid: code}).length == 0)
-                break;
-        }
+        var code = genChars(5);
+        
+        
         if(data.type == 'computer'){
+            console.log("computer");
             // If request type is computer
-            dbInsert({
-                grID: code,     // Id for the group
-                userAmt: 0,     // Amount of people in the group
-                users: []
-            });
+            var newObj = {};
+            newObj[code] = {    // Id for the group
+                userAmt: 0,     // Amount of people in the group 
+        };
+            
+            dbInsert("/", newObj);
             res.end(JSON.stringify({status: "success", grID: code}));
             console.log("Created new room with code: " + code);
         } else {
@@ -70,8 +67,6 @@ app.post("/createroom", function(req,res){
                 users: [{       // Arraylist of users in the group
                     id: 1,      // Individual user ID's
                     name: data.usrName, // Name of the individual user 
-                    rDay: [],
-                    rWeek: []
                 }]
             });
             res.end(JSON.stringify({status: "success", grID: code, id: 1}));
@@ -92,12 +87,22 @@ app.post("/joinroom", function(req, res){
 	req.on("end",function(){
         // After recieving data
         var data = JSON.parse(body);
+        if(obj.rmID.length != 5)
+            res.end(JSON.stringify({status: "error", message: "invalid code"}));
+        else
+            addToRoom(obj, res);
         
     });
     
 });
 
+function addToRoom(data, res){
+    dbFind("/", )
+    
+}
+
 app.post("/report", function(req, res){
+    
     
 });
 
