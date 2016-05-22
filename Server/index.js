@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, "Website")));
 
 // Post request to create room
 app.post("/createroom", function(req,res){
-    logTime({grID: "2JEXT", id : 1, minutes: 1000}, new Date(), res);
+//logTime({grID: "2JEXT", id : 1, minutes: 1000}, new Date(), res);
     //addToRoom({grID: "ZEUQM", name: "poop"},res);
     var body="";
 	req.on("data",function(data){
@@ -112,7 +112,6 @@ function addToRoom(data, res){
 }
 
 app.post("/report", function(req, res){
-       var time = new Date;
        var body="";
 	req.on("data",function(data){
 		body+=data;
@@ -123,7 +122,10 @@ app.post("/report", function(req, res){
 
 	req.on("end",function(){
        var obj = JSON.parse(body);
-       logTime(obj, time, res);
+       if(obj.time == null)
+            logTime(obj, new Date(), res);
+       else
+            logTime(obj, obj.time, res);
     
     });
 });
