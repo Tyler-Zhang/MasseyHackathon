@@ -57,12 +57,7 @@ function makeChart(){
 		if(request.readyState ==4){
 			var obj = JSON.parse(request.responseText);
 			
-			if(obj.status === "success")
-				updateClient(obj);
-			else if(obj.status === "error")
-				displayError(obj);
-			else
-				console.log("Null message");
+			console.log(obj);
 			
 		}
 	}
