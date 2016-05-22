@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_home"
+            android:checked="false"
+            android:title="Your Phone Usage" />
+        <item
+            android:id="@+id/nav_room"
+            android:checked="false"
+            android:title="Room Phone Usage" />
+        <item
+            android:id="@+id/nav_info"
+            android:checked="false"
+            android:title="About the Developers" />
+        <item
+            android:id="@+id/nav_pref"
+            android:checked="false"
+            android:title="Preferences" />
+        <item
+            android:id="@+id/nav_switch"
+            android:checked="false"
+            android:title="Join Another Group" />
+    </group>
+
+</menu>

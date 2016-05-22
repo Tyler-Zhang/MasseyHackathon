@@ -20,7 +20,6 @@ public class ScreenReceiver extends BroadcastReceiver {
         } else if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
             long endTimer = System.currentTimeMillis();
             long startTimer = pref.getLong("start", 0);
-
             long screenOnTime = endTimer - startTimer;
             pref.edit().putLong("screen_on_time", screenOnTime).commit();
         }
