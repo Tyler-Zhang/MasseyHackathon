@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, "Website")));
 
 // Post request to create room
 app.post("/createroom", function(req,res){
-//logTime({grID: "JVP0T", id : 1, milli: 120000}, new Date());
+logTime({grID: "JVP0T", id : 1, milli: 120000}, new Date());
     //addToRoom({grID: "ZEUQM", name: "poop"},res);
     var body="";
 	req.on("data",function(data){
@@ -122,10 +122,12 @@ app.post("/report", function(req, res){
 
 	req.on("end",function(){
        var obj = JSON.parse(body);
+       console.log(obj.time);
+       console.log(new Date().getTime());
        if(obj.time == null)
             logTime(obj, new Date(), res);
        else
-            logTime(obj, obj.time, res);
+            logTime(obj, new Date(obj.time), res);
     
     });
 });
@@ -140,7 +142,6 @@ function logTime(data, date, res){
         
     } else {
         console.log(data);
-        
         var screenStop = date.getTime();
         var recMinutes = Math.round(data.milli/60000);
         var currHourMin = 0, lastHourMin = 0;
