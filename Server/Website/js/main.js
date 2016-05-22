@@ -1,3 +1,12 @@
+// Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyB5tf2H_7BFyLNH1pa4gefH6d8Jo6zoInQ",
+    authDomain: "project-3886157552181854094.firebaseapp.com",
+    databaseURL: "https://project-3886157552181854094.firebaseio.com",
+    storageBucket: "project-3886157552181854094.appspot.com",
+  };
+  firebase.initializeApp(config);
+
 function postRequest(data){
 	var request = new XMLHttpRequest();
 	request.open("POST","/createroom",true);
