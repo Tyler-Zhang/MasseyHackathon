@@ -28,7 +28,7 @@ function dbFind(obj) {
 };
 
 // Web paths
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "Website")));
 
 // Post request to create room
 app.post("/createroom", function(req,res){
@@ -61,6 +61,7 @@ app.post("/createroom", function(req,res){
                 users: []
             });
             res.end(JSON.stringify({status: "success", grID: code}));
+            console.log("Created new room with code: " + code);
         } else {
             // If request type is an android device
             dbInsert({
@@ -73,7 +74,8 @@ app.post("/createroom", function(req,res){
                     rWeek: []
                 }]
             });
-            res.end(JSON.stringify({status: "success", grID: code, id: 1}));            
+            res.end(JSON.stringify({status: "success", grID: code, id: 1}));
+            console.log("Created new room with code: " + code);            
         }
     });
 });
@@ -99,7 +101,10 @@ app.post("/report", function(req, res){
     
 });
 
-app.get("/g/")
+app.get("/view",function(){
+    
+});
+
 
 
 // Create web server
