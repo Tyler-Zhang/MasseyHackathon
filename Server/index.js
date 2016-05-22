@@ -14,17 +14,6 @@ var db = firebase.database();
 var ref = db.ref();
 
 
-
-// Database functions
-function dbInsert(path, obj) {
-    db.ref(path).update(obj);
-};
-
-function dbFind(loc, obj, cb) {
-    ref.child(loc).on(obj, cb);
-    
-};
-
 // Web paths
 app.use(express.static(path.join(__dirname, "Website")));
 
@@ -148,73 +137,53 @@ function logTime(data, date, res){
     } else {
         console.log(data);
         
-        var minutes = date.getMinutes();
-        var hour = date.getHours();
-        var day = date.day();
-        var month = date.getMonth();
+        var screenStop = date.getTime();
         var recMinutes = data.minutes;
+        var currHourMin = 0, lastHourMin = 0;
+        var newRef = ref.child("/" + data.grID +"/users/" + data.id + "/");
         
-        // minutes aren't contained in 1 day
-        if(hour*60 + minutes < recMinutes){
-            var screenStartOn = new Date(date.getTime() - recMinutes*60*1000);
-            console.log(screenStartOn.toString("MM"));
-            console.log(screenStartOn.toString("DD"));
+        if(date.getMinutes() >= recMinutes){
+            currHourMin = recMinutes;
+            recMinutes = 0;
+        }
+        else {
+            currHourMin = date.getMinutes();
+            recMinutes -= currHourMin;
         }
         
-        /*
-        var pushData = [];
-        if(recMinutes <= minutes)
-            pushData[0] = recMinutes;
-        else{
-            pushData[0] = minutes;
-            recMinutes -= minutes;
-            while(recMinutes > 0 ){
-                if(recMinutes >= 60){
-                    pushData.push(60);
-                    recMinutes -= 60;
-                } else {
-                    pushData.push(recMinutes);
-                    recMinutes = 0;
-                }
-            }
+        if(recMinutes > 0){
+            lastHourMin = recMinutes%60;
+            recMinutes -= lastHourMin;
         }
-        var i = 0;
-        var uploadTime = function(snapshot){
-            var obj = snapshot.val();
-            if(obj == null)
-                res.send("ERROR: ROOMID DOESN'T EXIST");
-            else if(data.id > obj.userAmt)
-                res.send("ERROR: USER SHOULDN'T EXIST");
-            else {
-                console.log(i);
-                console.log(pushData);
-                
-                var newRef = ref.child("/" + data.grID +"/users/" + data.id + "/hours/");
-                
-                    //console.log("pos: %d addingHour: %d currentHour %d", pos, addingHour, currentHour);
-                     var pos = hour - i;
-                    newRef.child("/"+ pos).once("value", function(snapshot){
-                        var oldValue = (snapshot.val() == null)? 0 : snapshot.val();
-                        var newValue = oldValue + pushData[i];
-                        newRef.child("/"+ pos + "/").set((newValue > 60)? 60: newValue);
-                        i++;
-                        if(i < pushData.length)
-                            ref.child("/" + data.grID).once("value", uploadTime);
-                        else
-                            return;
-                    });
-                }
-                
+        var screenStart = date.getTime() - recMinutes*60*1000;
+        var startDate = new Date(screenStart);
+        
+        newRef.child("/" + date.getMonth() + "/" + date.getDate() + "/" + date.getHours()).once("value", function(snapshot){
+            var oldValue = (snapshot.val() == null)? 0 : snapshot.val();
+            snapshot.ref.set(oldValue + currHourMin);
+            
+            newRef.child("/" + startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).once("value", function(snapshot){
+            var oldValue = (snapshot.val() == null)? 0 : snapshot.val();
+            snapshot.ref.set(oldValue + currHourMin);
+            startDate.add(1).hours();
+            while(startDate.getTime() < screenStop){
+                newRef.child(startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).set(60);
+                console.log("adding: " + startDate);
+                startDate.add(1).hours();   
             }
-        }
-        ref.child("/" + data.grID).once("value", uploadTime);
+            
+         });        
+    });
+            
+        
+        //newRef.child(startMonth + "/" + startDay + "/" + startHour).once("value", uploadTime);
         //res.send("SUCCESS: UPLOADED");
         
     }
-
+}
 app.get("/view",function(){
     
-}*/);
+});
 
 
 
@@ -232,5 +201,3 @@ function genChars(amt){
     }
     return str;
 }
-
-
