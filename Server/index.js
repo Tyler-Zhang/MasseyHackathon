@@ -43,7 +43,7 @@ app.post("/createroom", function(req,res){
         var data = JSON.parse(body);
         console.log(data);
         if(data.type != 'computer' && data.type!= 'android'){
-            res.end(JSON.stringify({status: "error", message: "no type available"}));
+            res.send(JSON.stringify({status: "error", message: "no type available"}));
             return;
         }
         var code = genChars(5);
@@ -58,7 +58,7 @@ app.post("/createroom", function(req,res){
             ref.child("/"+code).update({   // Id for the group
                 userAmt: 0,         // Amount of people in the group 
                  });
-            res.end(JSON.stringify({status: "success", grID: code}));
+            res.send(JSON.stringify({status: "success", grID: code}));
             console.log("Created new room with code: " + code);
         } else {
             // If request type is an android device
@@ -70,7 +70,7 @@ app.post("/createroom", function(req,res){
                     }
                 }
             });
-            res.end(JSON.stringify({status: "success", grID: code, id: 1}));
+            res.send(JSON.stringify({status: "success", grID: code, id: 1}));
             console.log("Created new room with code: " + code);            
         }
     });
@@ -89,7 +89,7 @@ app.post("/joinroom", function(req, res){
         // After recieving data
         var data = JSON.parse(body);
         if(obj.grID.length != 5)
-            res.end(JSON.stringify({status: "error", message: "invalid code"}));
+            res.send(JSON.stringify({status: "error", message: "invalid code"}));
         else{
             addToRoom(obj, res);}
         
@@ -104,7 +104,7 @@ function addToRoom(data, res){
         console.log(obj);
         if(obj == null){
             console.log("Invalid room ID submitted");
-            res.end("ERROR:WRONG ROOM NUMBER");
+            res.send("ERROR:WRONG ROOM NUMBER");
         } else {
             console.log("room exists");
             var func = function(snapshot){
@@ -113,7 +113,7 @@ function addToRoom(data, res){
                 ref.child("/"+data.grID+"/users/" + (usrAmt+1)).update({name: data.name});
             }
             ref.child("/"+data.grID+"/userAmt").once("value",func)
-            res.end(usrAmt + 1);
+            res.send(JSON.stringify({id:usrAmt + 1}));
         }
     }
     ref.child("/"+data.grID).once("value", func);
@@ -142,7 +142,7 @@ function logTime(data, date, res){
     console.log(data);
     
     if(!data.hasOwnProperty("grID") || !data.hasOwnProperty("id") || !data.hasOwnProperty("minutes")){
-        res.end("ERROR: NOT SENDING COMPLETE DATA");
+        res.send("ERROR: NOT SENDING COMPLETE DATA");
     } else {
         console.log(data);
         var minutes = date.getMinutes();
@@ -169,9 +169,9 @@ function logTime(data, date, res){
         var uploadTime = function(snapshot){
             var obj = snapshot.val();
             if(obj == null)
-                res.end("ERROR: ROOMID DOESN'T EXIST");
+                res.send("ERROR: ROOMID DOESN'T EXIST");
             else if(data.id > obj.userAmt)
-                res.end("ERROR: USER SHOULDN'T EXIST");
+                res.send("ERROR: USER SHOULDN'T EXIST");
             else {
                 console.log(i);
                 console.log(pushData);
@@ -195,7 +195,7 @@ function logTime(data, date, res){
             }
         }
         ref.child("/" + data.grID).once("value", uploadTime);
-        //res.end("SUCCESS: UPLOADED");
+        //res.send("SUCCESS: UPLOADED");
         
     }
 
