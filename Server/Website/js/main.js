@@ -21,4 +21,5 @@ function displayError(obj){
 }
 function updateClient(obj){
 	window.location = "localhost:7777/?rmid=" + obj.rmid;
+	document.getElementById("code").innerHTML = grID;
 }
