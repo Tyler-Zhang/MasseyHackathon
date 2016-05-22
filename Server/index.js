@@ -29,6 +29,7 @@ app.use(express.static(path.join(__dirname, "Website")));
 
 // Post request to create room
 app.post("/createroom", function(req,res){
+    addToRoom({grID: "1WBD6", name: "Tyler"}, res);
     var body="";
 	req.on("data",function(data){
 		body+=data;
@@ -89,15 +90,41 @@ app.post("/joinroom", function(req, res){
         var data = JSON.parse(body);
         if(obj.rmID.length != 5)
             res.end(JSON.stringify({status: "error", message: "invalid code"}));
-        else
-            addToRoom(obj, res);
+        else{
+            addToRoom(obj, res);}
         
     });
     
 });
 
 function addToRoom(data, res){
-    dbFind("/", )
+   var ctx = {data: data, res: res};
+   
+    var func = function(snapshot){
+        console.log("Attempting to find room id: " + data.grID);
+        var obj = snapshot.val();
+        console.log(obj);
+        if(obj == null){
+            console.log("Invalid room ID submitted");
+            res.end("ERROR:WRONG ROOM NUMBEr");
+        } else {
+            console.log("room exists");
+            var func = function(snapshot){
+                var usrAmt = snapshot.val();
+                ref.child("/"+data.grID+"/userAmt").set(usrAmt+1);
+                var newobj = {};
+                newobj[usrAmt+1] = {
+                    id: usrAmt+1,
+                    name: data.name
+                };
+                ref.child("/"+data.grID+"/users").update(newobj);
+            }
+            func.bind(this);
+            ref.child("/"+data.grID+"/userAmt").once("value",func)
+        }
+    }
+    func.bind(ctx);
+    ref.child("/"+data.grID).once("value", func);
     
 }
 
@@ -126,3 +153,5 @@ function genChars(amt){
     }
     return str;
 }
+
+
