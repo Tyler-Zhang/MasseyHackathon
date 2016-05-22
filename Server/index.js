@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, "Website")));
 
 // Post request to create room
 app.post("/createroom", function(req,res){
-logTime({grID: "JVP0T", id : 1, milli: 120000}, new Date());
+//logTime({grID: "JVP0T", id : 1, milli: 120000}, new Date());
     //addToRoom({grID: "ZEUQM", name: "poop"},res);
     var body="";
 	req.on("data",function(data){
@@ -189,8 +189,26 @@ function logTime(data, date, res){
         
     }
 }
-app.get("/view",function(){
-    
+app.post("/view",function(req, res){
+    var body="";
+	req.on("data",function(data){
+		body+=data;
+		//Check to see if someone is trying to crash the server
+		if(body.length >1e6)
+			request.connection.destroy();
+	});
+
+	req.on("end",function(){
+        var obj = JSON.parse(body);
+        var grID = obj.grID;
+        console.log("Request data: " + grID);
+        var newRef = ref.child("/" + grID +"/users");
+        
+        newRef.once("value",function(snapshot){
+            console.log(snapshot.val());
+            res.send(snapshot.val());
+        });
+    });
 });
 
 
