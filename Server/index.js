@@ -29,7 +29,6 @@ app.use(express.static(path.join(__dirname, "Website")));
 
 // Post request to create room
 app.post("/createroom", function(req,res){
-    logTime({grID: "70EFD", id:1, minutes: 400}, new Date(), res);
     //addToRoom({grID: "ZEUQM", name: "poop"},res);
     var body="";
 	req.on("data",function(data){
@@ -56,7 +55,7 @@ app.post("/createroom", function(req,res){
             var newObj = {};
            
             
-            ref.child("/" +code).update({   // Id for the group
+            ref.child("/"+code).update({   // Id for the group
                 userAmt: 0,         // Amount of people in the group 
                  });
             res.end(JSON.stringify({status: "success", grID: code}));
@@ -68,7 +67,7 @@ app.post("/createroom", function(req,res){
                 userAmt: 1,     // Amount of people in the group
                 users: [{       // Arraylist of users in the group
                     id: 1,      // Individual user ID's
-                    name: data.usrName, // Name of the individual user 
+                    name: data.name, // Name of the individual user 
                 }]
             });
             res.end(JSON.stringify({status: "success", grID: code, id: 1}));
@@ -199,9 +198,6 @@ function logTime(data, date, res){
         //res.end("SUCCESS: UPLOADED");
         
     }
-    
-    
-    
 
 app.get("/view",function(){
     
