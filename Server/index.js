@@ -3,6 +3,7 @@ var express = require("express");   // Linking to the different web pages
 var path = require("path");         // Joing paths
 var app = express();
 var firebase = require("firebase");
+require("datejs");
 
 firebase.initializeApp({
   serviceAccount: "jsonAuth.json",
@@ -29,6 +30,7 @@ app.use(express.static(path.join(__dirname, "Website")));
 
 // Post request to create room
 app.post("/createroom", function(req,res){
+    logTime({grID: "2JEXT", id : 1, minutes: 1000}, new Date(), res);
     //addToRoom({grID: "ZEUQM", name: "poop"},res);
     var body="";
 	req.on("data",function(data){
@@ -96,7 +98,7 @@ app.post("/joinroom", function(req, res){
     });
     
 });
-
+// Data takes rmID, id, and minutes
 function addToRoom(data, res){
     var func = function(snapshot){
         console.log("Attempting to find room id: " + data.grID);
@@ -145,10 +147,21 @@ function logTime(data, date, res){
         res.send("ERROR: NOT SENDING COMPLETE DATA");
     } else {
         console.log(data);
+        
         var minutes = date.getMinutes();
         var hour = date.getHours();
+        var day = date.day();
+        var month = date.getMonth();
         var recMinutes = data.minutes;
         
+        // minutes aren't contained in 1 day
+        if(hour*60 + minutes < recMinutes){
+            var screenStartOn = new Date(date.getTime() - recMinutes*60*1000);
+            console.log(screenStartOn.toString("MM"));
+            console.log(screenStartOn.toString("DD"));
+        }
+        
+        /*
         var pushData = [];
         if(recMinutes <= minutes)
             pushData[0] = recMinutes;
@@ -201,7 +214,7 @@ function logTime(data, date, res){
 
 app.get("/view",function(){
     
-});
+}*/);
 
 
 
