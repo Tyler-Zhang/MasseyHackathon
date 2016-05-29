@@ -1,25 +1,32 @@
 var http = require("http");         // Launching the HTML server
 var express = require("express");   // Linking to the different web pages
 var path = require("path");         // Joing paths
-var app = express();
-var firebase = require("firebase");
-require("datejs");
+var app = express();                // Handling get/post requests
+var firebase = require("firebase"); // Linking up to the firebase server
+require("datejs");                  // Extension to Date() for better date handling
 
+/* 
+ * This provides the authorization for the data base
+ * Currently the authorization is open anyways though
+*/
 firebase.initializeApp({
   serviceAccount: "jsonAuth.json",
   databaseURL: "https://project-3886157552181854094.firebaseio.com/"
 });
 
 var db = firebase.database();
-var ref = db.ref();
+var ref = db.ref();                 // Ref is the reference to the values in the data base
 
 
 // Web paths
 app.use(express.static(path.join(__dirname, "Website")));
+app.get("/:page", function(req, res){
+   res.sendFile(path.join(__dirname, "Website", req.params.page + ".html")); 
+});
 
 // Post request to create room
 app.post("/createroom", function(req,res){
-//logTime({grID: "JVP0T", id : 1, milli: 120000}, new Date());
+    //logTime({grID: "JVP0T", id : 1, milli: 120000}, new Date());
     //addToRoom({grID: "ZEUQM", name: "poop"},res);
     var body="";
 	req.on("data",function(data){
@@ -33,15 +40,15 @@ app.post("/createroom", function(req,res){
         // After recieving data
         var data = JSON.parse(body);
         console.log(data);
+        // Check which kind of device is trying to connect, if android, automatically add them to the group
         if(data.type != 'computer' && data.type!= 'android'){
-            res.send(JSON.stringify({status: "error", message: "no type available"}));
+            res.json({status: "error", message: "no type available"});
             return;
         }
         var code = genChars(5);
         
         
         if(data.type == 'computer'){
-            console.log("computer wants to create room");
             // If request type is computer
             var newObj = {};
            
@@ -49,8 +56,8 @@ app.post("/createroom", function(req,res){
             ref.child("/" + code).update({   // Id for the group
                 userAmt: 0,         // Amount of people in the group 
                  });
-            res.send(JSON.stringify({status: "success", grID: code}));
-            console.log("Created new room with code: " + code);
+            res.json({status: "success", grID: code});
+            console.log("Created new room with code: %s Type: %s", code, data.type);
         } else {
             // If request type is an android device
             ref.child("/" + code).update({
@@ -61,8 +68,8 @@ app.post("/createroom", function(req,res){
                     }
                 }
             });
-            res.send(JSON.stringify({status: "success", grID: code, id: 1}));
-            console.log("Created new room with code: " + code);            
+            res.json({status: "success", grID: code, id: 1});
+            console.log("Created new room with code: %s Type: %s", code, data.type);        
         }
     });
 });
@@ -79,10 +86,12 @@ app.post("/joinroom", function(req, res){
 	req.on("end",function(){
         // After recieving data
         var data = JSON.parse(body);
-        if(obj.grID.length != 5)
-            res.send(JSON.stringify({status: "error", message: "invalid code"}));
-        else{
-            addToRoom(obj, res);}
+        if(obj.grID.length != 5){
+            res.json({status: "error", message: "invalid code"});
+            console.log("Error: tried to join room with invalid code length: %s", obj.grID);
+        }
+        else
+            addToRoom(obj, res);
         
     });
     
@@ -90,21 +99,20 @@ app.post("/joinroom", function(req, res){
 // Data takes rmID, id, and minutes
 function addToRoom(data, res){
     var func = function(snapshot){
-        console.log("Attempting to find room id: " + data.grID);
         var obj = snapshot.val();
         console.log(obj);
         if(obj == null){
-            console.log("Invalid room ID submitted");
+            console.log("Error: Room ID [%s] not found", data.grID);
             res.send("ERROR:WRONG ROOM NUMBER");
         } else {
-            console.log("room exists");
+             console.log("User [%s] successfully joined  room [%s]", data.name, data.grID);
             var func = function(snapshot){
                 var usrAmt = snapshot.val();
                 ref.child("/"+data.grID+"/userAmt").set(usrAmt+1);
                 ref.child("/"+data.grID+"/users/" + (usrAmt+1)).update({name: data.name});
             }
-            ref.child("/"+data.grID+"/userAmt").once("value",func)
-            res.send(JSON.stringify({id:usrAmt + 1}));
+            ref.child("/"+data.grID+"/userAmt").once("value",func);
+            res.json({id:usrAmt + 1});
         }
     }
     ref.child("/"+data.grID).once("value", func);
@@ -184,9 +192,6 @@ function logTime(data, date, res){
     });
             
         
-        //newRef.child(startMonth + "/" + startDay + "/" + startHour).once("value", uploadTime);
-        //res.send("SUCCESS: UPLOADED");
-        
     }
 }
 app.post("/view",function(req, res){
@@ -202,11 +207,11 @@ app.post("/view",function(req, res){
         var obj = JSON.parse(body);
         var grID = obj.grID;
         console.log("Request data: " + grID);
-        var newRef = ref.child("/" + grID +"/users");
+        var newRef = ref.child("/" + grID);
         
         newRef.once("value",function(snapshot){
             console.log(snapshot.val());
-            res.send(snapshot.val());
+            res.json(snapshot.val());
         });
     });
 });

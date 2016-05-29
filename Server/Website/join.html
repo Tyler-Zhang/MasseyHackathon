@@ -79,6 +79,13 @@
         
     <script src="https://www.gstatic.com/firebasejs/live/3.0/firebase.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        function sendCode(){
+            var code = document.getElementById("roomCode").value;
+            window.location = "/room.html?grID="+code;
+            return false;
+        }
+    </script>
     
     <!-- jQuery -->
     <script src="js/jquery.js"></script>

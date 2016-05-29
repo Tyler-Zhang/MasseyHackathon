@@ -1,4 +1,3 @@
-var grID;
 function postRequest(){
 	var request = new XMLHttpRequest();
 	request.open("POST","/createroom",true);
@@ -23,25 +22,13 @@ function displayError(obj){
 	
 }
 function updateClient(obj){
-	//window.location = "localhost:7777/room?grID=" + obj.grid;
 	document.getElementById("code").innerHTML = obj.grID;
-	grID= obj.grID;
+	
+	document.getElementById("button").onclick = function(){
+		window.location = "room.html?grID=" + obj.grID;
+	}
 }
 
-function viewRoom(grID){
-	window.location = "room.html?grID=" + grID;
-}
-
-function sendCode(){
-	var code = document.getElementById("roomCode").value;
-	console.log(code);
-	window.location = "/room.html?grID="+code;
-	return false;
-	/*var request = new XMLHttpRequest();
-	request.open("POST","/room",true);
-	request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-	request.send(code);*/
-}
 
 function makeChart(){
 	
