@@ -1,0 +1,23 @@
+{
+  "name": "screenoff_server",
+  "version": "1.0.0",
+  "description": "Backend for the screenoff ecosystem",
+  "main": "index.js",
+  "dependencies": {
+    "datejs": "^1.0.0-rc3",
+    "express": "^4.13.4",
+    "firebase": "^3.1.0",
+    "mongodb": "^2.1.19",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ScreenOff"
+  },
+  "author": "",
+  "license": "ISC"
+}
