@@ -9,19 +9,18 @@
     tools:openDrawer="start">
 
     <LinearLayout
-        android:layout_height="match_parent"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
-    <include
-        android:id="@+id/toolbar"
-        layout="@layout/tool_bar"/>
+        <include
+            android:id="@+id/toolbar"
+            layout="@layout/tool_bar"/>
 
-    <FrameLayout
-        android:id="@+id/frame"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    </FrameLayout>
+        <FrameLayout
+            android:id="@+id/frame"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
 
     </LinearLayout>
 
@@ -32,6 +31,6 @@
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
         app:headerLayout="@layout/nav_header_main"
-        app:menu="@menu/drawer" />
+        app:menu="@menu/drawer"/>
 
 </android.support.v4.widget.DrawerLayout>

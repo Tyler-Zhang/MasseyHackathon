@@ -36,7 +36,6 @@ public class JoinActivity extends AppCompatActivity {
 
         bJoin.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-
                 String url ="http://tylerzhang.com/joinroom";
                 JSONObject json = new JSONObject();
 

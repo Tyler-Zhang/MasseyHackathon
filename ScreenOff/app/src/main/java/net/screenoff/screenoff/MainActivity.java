@@ -56,7 +56,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // set up toolbar
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // set up drawer
+        mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        nvDrawer = (NavigationView) findViewById(R.id.nav_view);
+        setupDrawerContent(nvDrawer);
         drawerToggle = setupDrawerToggle();
+
+        // test for internet
         internetTest();
     }
 
@@ -66,14 +76,6 @@ public class MainActivity extends AppCompatActivity {
         if (!pref.getBoolean("logged_in", false)) {
             loadLoginView();
         } else {
-            toolbar = (Toolbar) findViewById(R.id.toolbar);
-            setSupportActionBar(toolbar);
-
-            mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-            nvDrawer = (NavigationView) findViewById(R.id.nav_view);
-            setupDrawerContent(nvDrawer);
-            drawerToggle = setupDrawerToggle();
-
             Intent i = new Intent(this, ScreenService.class);
             startService(i);
 
@@ -92,87 +94,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setupDrawerContent(NavigationView navigationView) {
-        navigationView.setNavigationItemSelectedListener(
-                new NavigationView.OnNavigationItemSelectedListener() {
-                    @Override
-                    public boolean onNavigationItemSelected(MenuItem menuItem) {
-                        selectDrawerItem(menuItem);
-                        return true;
-                    }
-                });
-    }
-
-    public void selectDrawerItem(MenuItem menuItem) {
-        Fragment fragment = null;
-        Class fragmentClass = MainFragment.class;
-
-        switch(menuItem.getItemId()) {
-            case R.id.nav_home:
-                fragmentClass = MainFragment.class;
-                Log.d("MAINFRAGMENT", "yay");
-                break;
-            case R.id.nav_room:
-
-                break;
-            case R.id.nav_info:
-
-                break;
-            case R.id.nav_pref:
-
-                break;
-            case R.id.nav_switch:
-                fragmentClass = SwitchFragment.class;
-                Log.d("SWITCHFRAGMENT", "yay");
-                break;
-            default:
-                fragmentClass = MainFragment.class;
-        }
-
-        try {
-            fragment = (Fragment) fragmentClass.newInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.frame, fragment).commit();
-
-        menuItem.setChecked(true);
-        setTitle(menuItem.getTitle());
-        mDrawer.closeDrawers();
-    }
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (drawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        drawerToggle.syncState();
-    }
-
-    private void loadLoginView() {
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-    }
-
-    private ActionBarDrawerToggle setupDrawerToggle() {
-        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open,  R.string.drawer_close);
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        drawerToggle.onConfigurationChanged(newConfig);
-    }
-
     private void syncFiles () {
         pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
 
@@ -181,7 +102,6 @@ public class MainActivity extends AppCompatActivity {
 
             if ( inputStream != null ) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                 String[] temp = bufferedReader.readLine().split("=");
 
@@ -270,4 +190,87 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Network Unavailable!", Toast.LENGTH_LONG).show();
         }
     }
+
+
+    private void loadLoginView() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+    }
+
+    private void setupDrawerContent(NavigationView navigationView) {
+        navigationView.setNavigationItemSelectedListener(
+                new NavigationView.OnNavigationItemSelectedListener() {
+                    @Override
+                    public boolean onNavigationItemSelected(MenuItem menuItem) {
+                        selectDrawerItem(menuItem);
+                        return true;
+                    }
+                });
+    }
+
+    public void selectDrawerItem(MenuItem menuItem) {
+        Fragment fragment = null;
+        Class fragmentClass = null;
+
+        switch(menuItem.getItemId()) {
+            case R.id.nav_home:
+                fragmentClass = MainFragment.class;
+                Log.d("MAINFRAGMENT", "yay");
+                break;
+            case R.id.nav_room:
+
+                break;
+            case R.id.nav_info:
+
+                break;
+            case R.id.nav_pref:
+
+                break;
+            case R.id.nav_switch:
+                fragmentClass = SwitchFragment.class;
+                Log.d("SWITCHFRAGMENT", "yay");
+                break;
+            default:
+                fragmentClass = MainFragment.class;
+        }
+
+        try {
+            fragment = (Fragment) fragmentClass.newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.frame, fragment).commit();
+
+        menuItem.setChecked(true);
+        setTitle(menuItem.getTitle());
+        mDrawer.closeDrawers();
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (drawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        drawerToggle.syncState();
+    }
+
+    private ActionBarDrawerToggle setupDrawerToggle() {
+        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open,  R.string.drawer_close);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        drawerToggle.onConfigurationChanged(newConfig);
+    }
+
 }

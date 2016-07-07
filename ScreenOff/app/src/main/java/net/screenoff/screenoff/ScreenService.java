@@ -69,10 +69,9 @@ public class ScreenService extends IntentService {
                 e.printStackTrace();
             }
 
-            Log.v("FILE", "" + file.exists());
-            InputStream inputStream = null;
+            InputStream inputStream;
             String contents = "";
-            InputStreamReader inputStreamReader = null;
+            InputStreamReader inputStreamReader;
 
             try {
                 inputStream = openFileInput(STORETEXT);
