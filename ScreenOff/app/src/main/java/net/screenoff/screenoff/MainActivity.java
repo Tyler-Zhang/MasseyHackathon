@@ -1,11 +1,7 @@
 package net.screenoff.screenoff;
 
-import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
@@ -14,16 +10,12 @@ import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -34,11 +26,8 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -67,19 +56,16 @@ public class MainActivity extends AppCompatActivity {
         drawerToggle = setupDrawerToggle();
 
         // test for internet
-        internetTest();
-    }
+        checkConnectivity();
 
-    private void mainTask() {
+        // check if user already joined a group
         pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
 
         if (!pref.getBoolean("logged_in", false)) {
-            loadLoginView();
+            loadLoginActivity();
         } else {
             Intent i = new Intent(this, ScreenService.class);
             startService(i);
-
-            syncFiles();
 
             Fragment fragment = null;
 
@@ -94,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // sync screen data
     private void syncFiles () {
         pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
 
@@ -155,50 +142,24 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private boolean checkConnectivity() {
-        boolean connected = false;
+    // check internet connection
+    private void checkConnectivity() {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
                 connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
-            connected = true;
-        } else
-            connected = false;
-
-        return connected;
-    }
-
-    private void internetTest () {
-        if(checkConnectivity()) {
-            mainTask();
-        } else {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("No Internet Connection");
-            builder.setMessage("This app requires an Internet connection to run.");
-
-            builder.setPositiveButton("Retry", new DialogInterface.OnClickListener()
-            {
-                @Override
-                public void onClick(DialogInterface dialog, int which)
-                {
-                    dialog.dismiss();
-                    internetTest();
-                }
-            });
-
-            AlertDialog dialog = builder.create();
-            dialog.show();
-            Toast.makeText(this, "Network Unavailable!", Toast.LENGTH_LONG).show();
+            syncFiles();
         }
     }
 
-
-    private void loadLoginView() {
+    // load login activity
+    private void loadLoginActivity() {
         Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
     }
 
+    // set up navigation drawer
     private void setupDrawerContent(NavigationView navigationView) {
         navigationView.setNavigationItemSelectedListener(
                 new NavigationView.OnNavigationItemSelectedListener() {
@@ -271,6 +232,11 @@ public class MainActivity extends AppCompatActivity {
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         drawerToggle.onConfigurationChanged(newConfig);
+    }
+
+    // disable back button
+    @Override
+    public void onBackPressed() {
     }
 
 }

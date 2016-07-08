@@ -38,4 +38,9 @@ public class RegisterActivity extends AppCompatActivity {
             }
         });
     }
+
+    // disable back button
+    @Override
+    public void onBackPressed() {
+    }
 }
