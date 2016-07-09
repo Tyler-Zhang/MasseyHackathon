@@ -26,8 +26,6 @@ app.get("/:page", function(req, res){
 
 // Post request to create room
 app.post("/createroom", function(req,res){
-    //logTime({grID: "JVP0T", id : 1, milli: 120000}, new Date());
-    //addToRoom({grID: "ZEUQM", name: "poop"},res);
     var body="";
 	req.on("data",function(data){
 		body+=data;
@@ -42,21 +40,20 @@ app.post("/createroom", function(req,res){
         console.log(data);
         // Check which kind of device is trying to connect, if android, automatically add them to the group
         if(data.type != 'computer' && data.type!= 'android'){
-            res.json({status: "error", message: "no type available"});
+            res.json(msg(ERR, "NO DEVICE TYPE SENT"));
             return;
         }
         var code = genChars(5);
-        
-        
+
         if(data.type == 'computer'){
             // If request type is computer
             var newObj = {};
            
-            
             ref.child("/" + code).update({   // Id for the group
                 userAmt: 0,         // Amount of people in the group 
                  });
-            res.json({status: "success", grID: code});
+
+            resp(res, RSP,  {grID: code})
             console.log("Created new room with code: %s Type: %s", code, data.type);
         } else {
             // If request type is an android device
@@ -68,7 +65,7 @@ app.post("/createroom", function(req,res){
                     }
                 }
             });
-            res.json({status: "success", grID: code, id: 1});
+            resp(res, RSP, {grID: code, id: 1});
             console.log("Created new room with code: %s Type: %s", code, data.type);        
         }
     });
@@ -87,7 +84,7 @@ app.post("/joinroom", function(req, res){
         // After recieving data
         var data = JSON.parse(body);
         if(obj.grID.length != 5){
-            res.json({status: "error", message: "invalid code"});
+            resp(res, ERR, "INVALID grID")
             console.log("Error: tried to join room with invalid code length: %s", obj.grID);
         }
         else
@@ -103,7 +100,7 @@ function addToRoom(data, res){
         console.log(obj);
         if(obj == null){
             console.log("Error: Room ID [%s] not found", data.grID);
-            res.send("ERROR:WRONG ROOM NUMBER");
+            resp(res, ERR, "grID NOT FOUND");
         } else {
              console.log("User [%s] successfully joined  room [%s]", data.name, data.grID);
             var func = function(snapshot){
@@ -143,10 +140,11 @@ app.post("/report", function(req, res){
 function logTime(data, date, res){
     
     console.log(data);
-    
+    // Check to make sure information payload is complete
+
     if(!data.hasOwnProperty("grID") || !data.hasOwnProperty("id") || !data.hasOwnProperty("milli")){
         console.log("ERROR: NOT SENDING COMPLETE DATA");
-        res.send("ERROR: NOT SENDING COMPLETE DATA");
+        resp(res, ERR, "LOGTIME REQUIRES ADDITIONAL DATA");
         
     } else {
         console.log(data);
@@ -168,18 +166,21 @@ function logTime(data, date, res){
             lastHourMin = recMinutes%60;
             recMinutes -= lastHourMin;
         }
+
+        //This code should be optimized by downloading the data first instead of requesting each time
+
         var screenStart = date.getTime() - data.milli;
         var startDate = new Date(screenStart);
         console.log("recMinutes: %d, currHourMin: %d, lastHourMin: %d, ", recMinutes, currHourMin, lastHourMin);
         newRef.child("/" + date.getMonth() + "/" + date.getDate() + "/" + date.getHours()).once("value", function(snapshot){
-            var oldValue = (snapshot.val() == null)? 0 : snapshot.val();
+            var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
             snapshot.ref.set(oldValue + currHourMin);
             
             if(lastHourMin == 0)
                 return;
-            
+
             newRef.child("/" + startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).once("value", function(snapshot){
-            var oldValue = (snapshot.val() == null)? 0 : snapshot.val();
+            var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
             snapshot.ref.set(oldValue + lastHourMin);
             startDate.add(1).hours();
             while(startDate.getTime() < screenStop){
@@ -189,14 +190,20 @@ function logTime(data, date, res){
             }
             
          });        
-    });
-            
-        
+    });     
     }
 }
+
+/*  This is to get the data from firebase
+    grID
+    id
+    timeStart
+    timeStop
+*/
+
 app.post("/view",function(req, res){
     var body="";
-	req.on("data",function(data){
+	req.on("data", function(data){
 		body+=data;
 		//Check to see if someone is trying to crash the server
 		if(body.length >1e6)
@@ -205,10 +212,19 @@ app.post("/view",function(req, res){
 
 	req.on("end",function(){
         var obj = JSON.parse(body);
-        var grID = obj.grID;
-        console.log("Request data: " + grID);
-        var newRef = ref.child("/" + grID);
+        if(!obj.grID)
+        {
+            console.log("ERROR: NO GROUP ID RECIEVED");
+            resp(res, ERR, "NO GROUP ID RECIEVED");
+        }
+
+        console.log("Request data group ID: " + obj.grID);
+        var newRef = ref.child(obj.grID);
         
+        console.log("Request data group ID: " + obj.grID + "/" + obj.id);
+        if(!!obj.id)
+            newRef = newRef.child(obj.id);
+
         newRef.once("value",function(snapshot){
             console.log(snapshot.val());
             res.json(snapshot.val());
@@ -231,4 +247,15 @@ function genChars(amt){
         str += Alpha.charAt(Math.random()*36);
     }
     return str;
+}
+
+var ERR = "ERROR";
+var RSP  = "RESPONSE";
+
+function resp(res, type, body)
+{
+    res.json({
+        type: type,
+        body: body
+    });
 }
