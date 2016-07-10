@@ -91,7 +91,7 @@
     <script type = "text/javascript">
             document.onload = postRequest("/createroom", {type: "computer"}, (obj) => {
                 console.log(obj);
-			    if(obj.type === "RESPONSE")
+			    if(obj.type === "SUCCESS")
 				    updateClient(obj);
 			    else
 				    displayMsg("Please try again later");

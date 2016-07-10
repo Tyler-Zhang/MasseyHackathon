@@ -1,0 +1,8 @@
+1) Download and Install Node https://nodejs.org/en/
+2) Open up the terminal and go to the /Server directory
+3) type in "npm install --save"
+4) Copy jsonAuth.json from google drive into the same folder
+5) In terminal type "node index.js"
+6) To find the ip address of your machine, in terminal, type "ipconfig" and look for "IPv4 Address"
+7) You'll need to replace the domain in the app with this ip
+8) You should be good to go!
