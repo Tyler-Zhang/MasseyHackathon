@@ -9,7 +9,28 @@
         <canvas id="myChart" width="400" height="400"></canvas>
         
     <script src="js/main.js"></script>
-    <script> document.onload = makeChart(); </script>
+    <script>
+
+    function makeChart(){	
+        var arr = document.URL.match(/grID=(.*)/);
+        var room = arr[1];
+        console.log("Making request with " + room);
+        
+        postRequest("/view", {grID: room}, (obj) => {
+            console.log(obj);
+            if(obj.type == "ERROR")
+                displayError(obj.body);
+            else if(obj.body.userAmt == 0)
+                displayError("There are no people added to your group yet");
+            else {
+                // Create the actual chart
+            }
+        });
+    }
+
+    document.onload = makeChart();
+    
+    </script>
 </body>
 
 </html>

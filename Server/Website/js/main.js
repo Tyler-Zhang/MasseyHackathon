@@ -11,14 +11,7 @@ function postRequest(url, data, callback){
 	}
 }
 
-
-function makeChart(){
-	
-	var arr = document.URL.match(/grID=(.*)/);
-	var room = arr[1];
-	console.log("Making request with " + room);
-	
-	postRequest("/view", {grID: room}, (obj) => {
-		console.log(obj);
-	});
+function displayError(msg){
+	console.log("Error: " + msg);
+	alert("ERROR: " + msg);
 }

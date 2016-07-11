@@ -26,7 +26,7 @@ app.get("/:page", function(req, res){
 
 app.post("/createroom", (req, res) => {
     onReq(req, res, (data) => {                                 // res will be in the scope of the function when it is run from within onReq
-        if(!checkData(res, data, ["type", "name"]))
+        if(!checkData(res, data, ["type"]))
             return;
 
         var code = genChars(5);
@@ -37,6 +37,8 @@ app.post("/createroom", (req, res) => {
             });
             resp(res, SUC,  {grID: code})
         } else if(data.type == "android"){                                                // If request type is an android device
+            if(!checkData(res, data, ["name"]))
+                return;
             ref.child("/" + code).update({
                 userAmt: 1,
                 users: {
@@ -109,8 +111,7 @@ function logTime(data, date, res){
     if(date.getMinutes() >= recMinutes){
         currHourMin = recMinutes;
         recMinutes = 0;
-    }
-    else {
+    } else {
         currHourMin = date.getMinutes();
         recMinutes -= currHourMin;
     }
@@ -125,21 +126,32 @@ function logTime(data, date, res){
     var screenStart = date.getTime() - data.milli;
     var startDate = new Date(screenStart);
     console.log("recMinutes: %d, currHourMin: %d, lastHourMin: %d, ", recMinutes, currHourMin, lastHourMin);
-    newRef.child("/" + date.getMonth() + "/" + date.getDate() + "/" + date.getHours()).once("value", function(snapshot){
+    newRef.child("/" + date.getMonth() + "/" + date.getDate() + "/" + date.getHours()).once("value", (snapshot) => {
         var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
         snapshot.ref.set(oldValue + currHourMin);
-        
-        if(lastHourMin == 0)
+
+        if(oldValue + currHourMin > 60)
+            resp(res, ERR, "TIME KEEPING ISSUE, CURRENT HOUR USAGE EXCEEDS 60");
+
+        if(oldValue != 0 && lastHourMin != 0)
+            resp(res, ERR, "TIME KEEPING ISSUE, TIME SPENT THIS HOUR EXCEEDS ACTUAL TIME");
+
+        if(lastHourMin == 0 && recMinutes == 0)
             return;
 
-        newRef.child("/" + startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).once("value", function(snapshot){
+        newRef.child("/" + startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).once("value", (snapshot) => {
         var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
         snapshot.ref.set(oldValue + lastHourMin);
-        startDate.add(1).hours();
-        while(startDate.getTime() < screenStop){
+
+        if(oldValue + lastHourMin > 60)
+            resp(res, ERR, "TIME KEEPING ISSUE, LAST HOUR USAGE EXCEEDS 60");
+
+        startDate.add(1).hour();
+        while(recMinutes > 0){
             newRef.child(startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).set(60);
             console.log("adding: " + startDate);
-            startDate.add(1).hours();   
+            startDate.add(1).hours();
+            recMinutes -= 60;
         }         
         });        
     });
@@ -151,15 +163,18 @@ app.post("/view", (req, res) => {
         if(!checkData(res, data, ["grID"]))
             return;
 
-        var newRef = ref.child(data.grID);
+        var newRef = ref.child(data.grID.toUpperCase());
         
         console.log("Request data group ID: " + data.grID + "/" + data.id);
         if(!!data.id)
             newRef = newRef.child(data.id);
 
-        newRef.once("value",function(snapshot){
-            console.log(snapshot.val());
-            resp(res, SUC, snapshot.val());
+        newRef.once("value", (snapshot) => {
+            var obj = snapshot.val();
+            if(obj == null)
+                resp(res, ERR, "Group Doesn't Exist");
+            else
+                resp(res, SUC, snapshot.val());
         });
     });
 });
