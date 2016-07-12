@@ -31,21 +31,20 @@ function makeCharts(data)
 
 	for(var x = 0; x < obj.userAmt; x++)
 	{
-		if(obj.users[x][date.getMonth()] == undefined)
+		var usrObj = obj.users[x][date.getMonth()][date.getDate()];
+		if(usrObj == undefined)
 		{
 			datasets.push(datasetObj(obj.users[x].name, null, colors[x]));
 			continue;
 		}
-		var usrObj = obj.users[x][date.getMonth()][date.getDate()];
-		var data = [0];
+		var data = [];
 		var total = 0;
-		for(var y = 0; y < 24; y ++)
+		for(var y = 0; y < date.getHours() + 1; y ++)
 		{
 			total += ((usrObj[y] == null)? 0 : usrObj[y]);
 			data.push(total);
 		}
 		datasets.push(datasetObj(obj.users[x].name, data, colors[x]));
-		console.log(data);
 	}
 
 	function datasetObj(name, data, color)
@@ -73,11 +72,13 @@ function makeCharts(data)
 					text: "Acumulated Cellphone Usage for the Day by Minutes"
 				},
 				legend: {
-					position: "bottom"
-				},
-				labels: {
-					boxWidth:14
-				}
+					position: "bottom",
+					labels: {
+						boxWidth:12,
+						fontSize:13,
+						padding: 30
+					}
+				}				
 			}
 		});
 }

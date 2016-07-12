@@ -231,29 +231,26 @@ function genChars(amt)
 {
     var Alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     var str = "";
-    for(var x = 0; x < amt; x++){
+    for(var x = 0; x < amt; x++)
         str += Alpha.charAt(Math.random()*36);
-    }
     return str;
 }
 
 var INFO = 0, WARN = 1, ERROR = 2, strLevel = ["[INFO]", "[WARN]", "[EROR]"];
-var logLevel =   WARN;
+var logLevel =   INFO;
 var writeLevel = WARN;
 
 function log(level, message)
 {
-    if(level >= logLevel)
+    if(level >= logLevel || level >= writeLevel)
     {
         var d = new Date();
         var time = d.toLocaleDateString() + " " + d.toLocaleTimeString();
         var str = strLevel[level] + " " + time + "> " + message;
-        console.log(str);
-    
-        if(level >= writeLevel)
-        {
-            fs.appendFile('logs.txt', str + "\r\n" , () => {});
-        }
-    }
 
+        if(level >= logLevel)
+            console.log(str);
+        if(level >= writeLevel)
+            fs.appendFile('logs.txt', str + "\r\n" , () => {});
+    }
 }
