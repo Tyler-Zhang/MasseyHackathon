@@ -18,10 +18,13 @@ import android.util.Log;
 import android.view.MenuItem;
 
 import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences pref;
     public static final String mypreference = "pref";
     private final static String STORETEXT = "timedata.txt";
+    RequestQueue requestQueue;
 
     private DrawerLayout mDrawer;
     private Toolbar toolbar;
@@ -57,6 +61,10 @@ public class MainActivity extends AppCompatActivity {
 
         // test for internet
         checkConnectivity();
+
+        // set up request queue & shared preferences
+        pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
+        requestQueue = Volley.newRequestQueue(this);
 
         // check if user already joined a group
         pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
@@ -82,39 +90,36 @@ public class MainActivity extends AppCompatActivity {
 
     // sync screen data
     private void syncFiles () {
-        pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
-
         try {
             InputStream inputStream = openFileInput(STORETEXT);
 
-            if ( inputStream != null ) {
+            if (inputStream != null) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String[] temp = bufferedReader.readLine().split("=");
+                String[] entry = bufferedReader.readLine().split("=");
 
-                for (int i = 0; i < temp.length; i++) {
-                    String[] temp2 = temp[i].split(" ");
+                for (int i = 0; i < entry.length; i++) {
+                    String[] data = entry[i].split(" ");
 
                     String url ="http://tylerzhang.com/createroom";
                     JSONObject json = new JSONObject();
 
                     try {
                         json.put("grID", pref.getString("grID", "error"));
-                        json.put("id", pref.getInt("id", 0));
-                        json.put("time", Long.parseLong(temp2[1]));
-                        json.put("milli", Long.parseLong(temp2[0]));
+                        json.put("id", pref.getInt("id", -1));
+                        json.put("milli", Long.parseLong(data[0]));
+                        json.put("time", Long.parseLong(data[1]));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
 
-                    JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                    JsonObjectRequest objRequest = new JsonObjectRequest
                             (Request.Method.POST, url, json, new Response.Listener<JSONObject>() {
-
                                 @Override
                                 public void onResponse(JSONObject response) {
                                     try {
-
-                                    } catch (Exception e) {
+                                        Log.d("syncFiles", (String) response.get("body"));
+                                    } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
                                 }
@@ -122,16 +127,19 @@ public class MainActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onErrorResponse(VolleyError error) {
-
+                                    Log.e("Volley", "Error");
                                 }
                             });
 
-                    MySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsObjRequest);
+                    requestQueue.add(objRequest);
                 }
 
+                // delete file
                 File dir = getFilesDir();
                 File file = new File(dir, STORETEXT);
                 boolean deleted = file.delete();
+
+                // close input streams
                 inputStream.close();
                 inputStreamReader.close();
             }
@@ -139,7 +147,6 @@ public class MainActivity extends AppCompatActivity {
         catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     // check internet connection

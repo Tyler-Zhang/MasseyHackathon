@@ -10,22 +10,27 @@ import android.net.NetworkInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class JoinActivity extends AppCompatActivity {
 
     SharedPreferences pref;
     public static final String mypreference = "pref";
+    RequestQueue requestQueue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +40,7 @@ public class JoinActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
+        requestQueue = Volley.newRequestQueue(this);
 
         // find layout elements
         EditText etCode = (EditText) findViewById(R.id.joinCode);
@@ -55,32 +61,38 @@ public class JoinActivity extends AppCompatActivity {
 
         try {
             json.put("grID", pref.getString("grID", "error"));
+            json.put("name", pref.getString("name", "error"));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest
+        JsonObjectRequest objRequest = new JsonObjectRequest
                 (Request.Method.POST, url, json, new Response.Listener<JSONObject>() {
-
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            int id = Integer.parseInt(response.get("id").toString());
-                            pref.edit().putInt("id", id).apply();
-                        } catch (Exception e) {
+                            String type = (String) response.get("type");
+
+                            if (type.equals("SUCCESS")) {
+                                JSONObject body = response.getJSONObject("body");
+                                int id = Integer.parseInt(body.get("id").toString());
+                                pref.edit().putInt("id", id).apply();
+                            } else {
+                                String error = (String) response.get("body");
+                                Log.d("ERROR", error);
+                            }
+                        } catch (JSONException e) {
                             e.printStackTrace();
                         }
                     }
                 }, new Response.ErrorListener() {
-
                     @Override
                     public void onErrorResponse(VolleyError error) {
-
+                        Log.e("Volley", "Error");
                     }
                 });
 
-        MySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsObjRequest);
-
+        requestQueue.add(objRequest);
         pref.edit().putBoolean("logged_in", true).apply();
         Intent intentCreate = new Intent(JoinActivity.this, MainActivity.class);
         startActivity(intentCreate);

@@ -24,11 +24,12 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class LoginActivity extends AppCompatActivity {
 
-    RequestQueue queue;
+    RequestQueue requestQueue;
     EditText etName;
     SharedPreferences pref;
     public static final String mypreference = "pref";
@@ -41,12 +42,13 @@ public class LoginActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
-        queue = Volley.newRequestQueue(this);
+        requestQueue = Volley.newRequestQueue(this);
 
         // find layout elements
         Button bJoin = (Button) findViewById(R.id.loginJoin);
         Button bCreate = (Button) findViewById(R.id.loginCreate);
         etName = (EditText) findViewById(R.id.loginName);
+        pref.edit().putString("name", etName.getText().toString()).apply();
 
         // join existing room
         bJoin.setOnClickListener(new View.OnClickListener() {
@@ -66,7 +68,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // creates room if internet connection is found
     private void createRoom() {
-        String url ="http://tylerzhang.com/createroom";
+        String url = "http://tylerzhang.com/createroom";
         JSONObject json = new JSONObject();
 
         try {
@@ -76,30 +78,36 @@ public class LoginActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest
+        JsonObjectRequest objRequest = new JsonObjectRequest
                 (Request.Method.POST, url, json, new Response.Listener<JSONObject>() {
-
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            String grID = (String)response.get("grID");
-                            int id = Integer.parseInt(response.get("id").toString());
-                            pref.edit().putString("grID", grID).apply();
-                            pref.edit().putInt("id", id).apply();
-                            RegisterActivity.tvCode.setText(grID);
-                        } catch (Exception e) {
+                            String type = (String) response.get("type");
+
+                            if (type.equals("SUCCESS")) {
+                                JSONObject body = response.getJSONObject("body");
+                                String grID = (String) body.get("grID");
+                                int id = Integer.parseInt(body.get("id").toString());
+                                pref.edit().putString("grID", grID).apply();
+                                pref.edit().putInt("id", id).apply();
+                                RegisterActivity.tvCode.setText(grID);
+                            } else {
+                                String error = (String) response.get("body");
+                                Log.d("ERROR", error);
+                            }
+                        } catch (JSONException e) {
                             e.printStackTrace();
                         }
                     }
                 }, new Response.ErrorListener() {
-
                     @Override
                     public void onErrorResponse(VolleyError error) {
-
+                        Log.e("Volley", "Error");
                     }
                 });
 
-        MySingleton.getInstance(getApplicationContext()).addToRequestQueue(jsObjRequest);
+        requestQueue.add(objRequest);
 
         Intent intentCreate = new Intent(LoginActivity.this, RegisterActivity.class);
         startActivity(intentCreate);
@@ -119,19 +127,17 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     // displays error if not connected to internet
-    private void internetTest () {
-        if(checkConnectivity()) {
+    private void internetTest() {
+        if (checkConnectivity()) {
             createRoom();
         } else {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("No Internet Connection");
             builder.setMessage("Joining a room requires an internet connection");
 
-            builder.setPositiveButton("Retry", new DialogInterface.OnClickListener()
-            {
+            builder.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
                 @Override
-                public void onClick(DialogInterface dialog, int which)
-                {
+                public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
                     internetTest();
                 }
