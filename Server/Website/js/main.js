@@ -15,3 +15,69 @@ function displayError(msg){
 	console.log("Error: " + msg);
 	alert("ERROR: " + msg);
 }
+
+var colors = ["255, 99, 132", "75, 198, 172", "173, 120, 195", "237, 208, 64", "223, 130, 18"];
+function makeCharts(data)
+{
+	var ctx = document.getElementById("myChart");
+	var hourLabels = ["12:00"];
+	var datasets = [];
+	var obj = data.body;
+	
+	for(var x = 1; x <= 24; x ++)
+		hourLabels.push(x + ":00");
+	
+	var date = new Date();
+
+	for(var x = 0; x < obj.userAmt; x++)
+	{
+		if(obj.users[x][date.getMonth()] == undefined)
+		{
+			datasets.push(datasetObj(obj.users[x].name, null, colors[x]));
+			continue;
+		}
+		var usrObj = obj.users[x][date.getMonth()][date.getDate()];
+		var data = [0];
+		var total = 0;
+		for(var y = 0; y < 24; y ++)
+		{
+			total += ((usrObj[y] == null)? 0 : usrObj[y]);
+			data.push(total);
+		}
+		datasets.push(datasetObj(obj.users[x].name, data, colors[x]));
+		console.log(data);
+	}
+
+	function datasetObj(name, data, color)
+	{
+		var x = {};
+		x.label = name;
+		x.data = [0].concat(data);
+		x.backgroundColor = 'rgba(' + color + ',0.2)';
+		x.borderColor = 'rgba(' + color + ',1)';
+		x.borderWidth = 1;
+		x.lineTension = 0.3;
+		return x;
+	}
+		var mChart = new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: hourLabels,
+				datasets: datasets		
+			},
+			options: {
+				title: {
+					display: true,
+					fontSize: 25,
+					padding: 20,
+					text: "Acumulated Cellphone Usage for the Day by Minutes"
+				},
+				legend: {
+					position: "bottom"
+				},
+				labels: {
+					boxWidth:14
+				}
+			}
+		});
+}

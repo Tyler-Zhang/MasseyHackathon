@@ -1,9 +1,10 @@
-var http = require("http");         // Launching the HTML server
-var express = require("express");   // Linking to the different web pages
-var path = require("path");         // Joing paths
-var app = express();                // Handling get/post requests
-var firebase = require("firebase"); // Linking up to the firebase server
-require("datejs");                  // Extension to Date() for better date handling
+var http =      require("http");            // Launching the HTML server
+var express =   require("express");         // Handling get/post requests
+var path =      require("path");            // Joing paths
+var firebase =  require("firebase");        // Linking up to the firebase server
+var sizeOf =    require("object-sizeof");   // Checking object of a javascript object
+var fs =        require("fs");              // Reading and writing files
+require("datejs");                          // Extension to Date() for better date handling
 
 /* 
  * This provides the authorization for the data base
@@ -19,6 +20,7 @@ var ref = db.ref();                 // Ref is the reference to the values in the
 
 
 // Web paths
+var app = express();
 app.use(express.static(path.join(__dirname, "Website")));
 app.get("/:page", function(req, res){
    res.sendFile(path.join(__dirname, "Website", req.params.page + ".html")); 
@@ -50,7 +52,7 @@ app.post("/createroom", (req, res) => {
             resp(res, ERR, "MUST SPECIFY DEVICE AS EITHER COMPUTER OR ANDROID");
             return;
         }
-        console.log("Created new room with code: %s Type: %s", code, data.type);     
+        log(INFO, "Created new room with code: "+ code + " Type: " + data.type);
     })
 });
 
@@ -81,7 +83,7 @@ function addToRoom(data, res){
             ref.child("/"+data.grID+"/userAmt").set(usrAmt+1);
             ref.child("/"+data.grID+"/users/" + (usrAmt)).update({name: data.name});
             resp(res, SUC, {id: usrAmt});
-            console.log("User [%s] successfully joined  room [%s] width id [%d]", data.name, data.grID, usrAmt);
+            log(INFO, "User [" + data.name + "] successfully joined  room [" + data.grID + "] width id [" + usrAmt +"]")
         }
         ref.child("/"+data.grID+"/userAmt").once("value",func);
     }
@@ -101,8 +103,6 @@ app.post("/report", (req, res) => {
 });
 
 function logTime(data, date, res){
-    
-    console.log(data);
     var screenStop = date.getTime();
     var recMinutes = Math.round(data.milli/60000);
     var currHourMin = 0, lastHourMin = 0;
@@ -121,20 +121,20 @@ function logTime(data, date, res){
         recMinutes -= lastHourMin;
     }
 
-    //This code should be optimized by downloading the data first instead of requesting each time
+    // This code should be optimized by downloading the data first instead of requesting each time
     // If we want this to be really bullet proof, it should be recursive to make sure no hour's usage exceeds 60 minutes
     var screenStart = date.getTime() - data.milli;
     var startDate = new Date(screenStart);
-    console.log("recMinutes: %d, currHourMin: %d, lastHourMin: %d, ", recMinutes, currHourMin, lastHourMin);
+    log(INFO, "recMinutes: " + recMinutes + ", currHourMin: " + currHourMin + ", lastHourMin: " + lastHourMin);
     newRef.child("/" + date.getMonth() + "/" + date.getDate() + "/" + date.getHours()).once("value", (snapshot) => {
         var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
         snapshot.ref.set(oldValue + currHourMin);
 
         if(oldValue + currHourMin > 60)
-            resp(res, ERR, "TIME KEEPING ISSUE, CURRENT HOUR USAGE EXCEEDS 60");
+            return resp(res, ERR, "TIME KEEPING ISSUE, CURRENT HOUR USAGE EXCEEDS 60");
 
         if(oldValue != 0 && lastHourMin != 0)
-            resp(res, ERR, "TIME KEEPING ISSUE, TIME SPENT THIS HOUR EXCEEDS ACTUAL TIME");
+            return resp(res, ERR, "TIME KEEPING ISSUE, TIME SPENT THIS HOUR EXCEEDS ACTUAL TIME");
 
         if(lastHourMin == 0 && recMinutes == 0)
             return;
@@ -144,18 +144,19 @@ function logTime(data, date, res){
         snapshot.ref.set(oldValue + lastHourMin);
 
         if(oldValue + lastHourMin > 60)
-            resp(res, ERR, "TIME KEEPING ISSUE, LAST HOUR USAGE EXCEEDS 60");
+            return resp(res, ERR, "TIME KEEPING ISSUE, LAST HOUR USAGE EXCEEDS 60");
 
         startDate.add(1).hour();
         while(recMinutes > 0){
             newRef.child(startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).set(60);
-            console.log("adding: " + startDate);
+            log("INFO", "Adding 1 hour to " + startDate);
             startDate.add(1).hours();
             recMinutes -= 60;
-        }         
+        }
+        resp(res, SUC, "UPDATED TIME TABLES");
         });        
     });
-    resp(res, SUC, "UPDATED TIME TABLES");
+    
 }
 
 app.post("/view", (req, res) => {
@@ -164,15 +165,15 @@ app.post("/view", (req, res) => {
             return;
 
         var newRef = ref.child(data.grID.toUpperCase());
-        
-        console.log("Request data group ID: " + data.grID + "/" + data.id);
+        log(INFO, "Request data group ID: " + data.grID + "/" + data.id)
+
         if(!!data.id)
             newRef = newRef.child(data.id);
 
         newRef.once("value", (snapshot) => {
             var obj = snapshot.val();
             if(obj == null)
-                resp(res, ERR, "Group Doesn't Exist");
+                resp(res, ERR, "Group [" + data.grID + "]Doesn't Exist");
             else
                 resp(res, SUC, snapshot.val());
         });
@@ -181,7 +182,7 @@ app.post("/view", (req, res) => {
 
 // Create web server
 http.createServer(app).listen(80, function(){
-	console.log("The server has been opened on port 80");
+    log(INFO, "The server has been opened on port 80");
 });
 
 // Network Functions
@@ -211,12 +212,11 @@ function resp(res, type, body)
         type: type,
         body: body
     }); 
-    console.log(type + ": " + body);
+    log((type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + " [Size: " + sizeOf(body) + "]");
 }
 
 function checkData(res, data, args)
 {
-    console.log(data);
     for(var x = 0; x < args.length; x++)
         if(!data.hasOwnProperty(args[x]))
         {
@@ -227,11 +227,33 @@ function checkData(res, data, args)
 }
 
 // Random functions
-function genChars(amt){
+function genChars(amt)
+{
     var Alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     var str = "";
     for(var x = 0; x < amt; x++){
         str += Alpha.charAt(Math.random()*36);
     }
     return str;
+}
+
+var INFO = 0, WARN = 1, ERROR = 2, strLevel = ["[INFO]", "[WARN]", "[EROR]"];
+var logLevel =   WARN;
+var writeLevel = WARN;
+
+function log(level, message)
+{
+    if(level >= logLevel)
+    {
+        var d = new Date();
+        var time = d.toLocaleDateString() + " " + d.toLocaleTimeString();
+        var str = strLevel[level] + " " + time + "> " + message;
+        console.log(str);
+    
+        if(level >= writeLevel)
+        {
+            fs.appendFile('logs.txt', str + "\r\n" , () => {});
+        }
+    }
+
 }
