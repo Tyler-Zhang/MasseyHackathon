@@ -6,10 +6,37 @@
 
     </head>
     <body>
-        <canvas id="myChart" width="400" height="400"></canvas>
+        <div style="width:800px; height:400px;">
+            <canvas id="myChart"></canvas>
+        </div>
         
-<script src = "src/chart.js"></script>
-<script src="js/main.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/Chart.js"></script>
+    <script>
+
+    function init(){
+        var arr = document.URL.match(/grID=(.*)/);
+        if(arr == null || !arr.hasOwnProperty("1"))
+        {
+            displayError("URL formatted wrong");
+            return;
+        }
+        var room = arr[1];
+        console.log("Making request with " + room);
+        
+        postRequest("/view", {grID: room}, (obj) => {
+            if(obj.type == "ERROR")
+                displayError(obj.body);
+            else if(obj.body.userAmt == 0)
+                displayError("There are no people added to your group yet");
+            else {
+               	makeCharts(obj);
+            }
+        });
+    }
+    document.onload = init();
+    
+    </script>
 </body>
 
 </html>

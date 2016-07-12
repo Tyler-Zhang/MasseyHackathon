@@ -82,8 +82,10 @@
     <script>
         function sendCode(){
             var code = document.getElementById("roomCode").value;
-            window.location = "/room.html?grID="+code;
-            return false;
+            if(code.match(/^\w{5}$/) == null)
+                displayError("Room id is invalid")
+            else
+                window.location = "/room.html?grID="+code;
         }
     </script>
     
