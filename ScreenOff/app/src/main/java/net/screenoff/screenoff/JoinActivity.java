@@ -31,6 +31,9 @@ public class JoinActivity extends AppCompatActivity {
     SharedPreferences pref;
     public static final String mypreference = "pref";
     RequestQueue requestQueue;
+    EditText etCode;
+
+    // don't continue if code is invalid
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +46,7 @@ public class JoinActivity extends AppCompatActivity {
         requestQueue = Volley.newRequestQueue(this);
 
         // find layout elements
-        EditText etCode = (EditText) findViewById(R.id.joinCode);
+        etCode = (EditText) findViewById(R.id.joinCode);
         Button bJoin = (Button) findViewById(R.id.joinButton);
 
         // join room by code
@@ -56,11 +59,11 @@ public class JoinActivity extends AppCompatActivity {
 
     // joins room if internet connection is found
     private void joinRoom() {
-        String url ="http://tylerzhang.com/joinroom";
+        String url ="http://192.168.1.112/joinroom";
         JSONObject json = new JSONObject();
 
         try {
-            json.put("grID", pref.getString("grID", "error"));
+            json.put("grID", etCode.getText().toString().toUpperCase());
             json.put("name", pref.getString("name", "error"));
         } catch (Exception e) {
             e.printStackTrace();
@@ -76,10 +79,25 @@ public class JoinActivity extends AppCompatActivity {
                             if (type.equals("SUCCESS")) {
                                 JSONObject body = response.getJSONObject("body");
                                 int id = Integer.parseInt(body.get("id").toString());
+
+                                // update shared preferences
                                 pref.edit().putInt("id", id).apply();
+                                pref.edit().putBoolean("logged_in", true).apply();
+
+                                // start main activity
+                                Intent intentCreate = new Intent(JoinActivity.this, MainActivity.class);
+                                startActivity(intentCreate);
                             } else {
                                 String error = (String) response.get("body");
-                                Log.d("ERROR", error);
+
+                                // error response
+                                if (error.equals("grID NOT FOUND")) {
+                                    Toast.makeText(JoinActivity.this, "Room code not found", Toast.LENGTH_LONG).show();
+                                    etCode.setText("");
+                                } else if (error.equals("INVALID grID")) {
+                                    Toast.makeText(JoinActivity.this, "Invalid room code", Toast.LENGTH_LONG).show();
+                                    etCode.setText("");
+                                }
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -88,14 +106,11 @@ public class JoinActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e("Volley", "Error");
+                        error.printStackTrace();
                     }
                 });
 
         requestQueue.add(objRequest);
-        pref.edit().putBoolean("logged_in", true).apply();
-        Intent intentCreate = new Intent(JoinActivity.this, MainActivity.class);
-        startActivity(intentCreate);
     }
 
     // checks for internet

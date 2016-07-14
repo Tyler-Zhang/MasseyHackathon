@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < entry.length; i++) {
                     String[] data = entry[i].split(" ");
 
-                    String url ="http://tylerzhang.com/createroom";
+                    String url = "http://192.168.1.112";
                     JSONObject json = new JSONObject();
 
                     try {
@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onErrorResponse(VolleyError error) {
-                                    Log.e("Volley", "Error");
+                                    error.printStackTrace();
                                 }
                             });
 
@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 File file = new File(dir, STORETEXT);
                 boolean deleted = file.delete();
 
-                // close input streams
+                // close input stream
                 inputStream.close();
                 inputStreamReader.close();
             }
