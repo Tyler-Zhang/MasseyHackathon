@@ -188,7 +188,7 @@ app.post("/view", (req, res) => {
 
 // Create web server
 http.createServer(app).listen(80, function(){
-    log(INFO, "The server has been opened on port 80");
+    log(INFO, "The server has been opened on port 80 \r\n");
 });
 
 // Network Functions

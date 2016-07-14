@@ -1,3 +1,4 @@
 node_modules
 jsonAuth.json
 /Server/logs.txt
+.idea
