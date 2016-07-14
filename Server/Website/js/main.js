@@ -1,5 +1,6 @@
 function postRequest(url, data, callback){
 	var request = new XMLHttpRequest();
+	console.log("URL: %s, data: %s, cb: %s", url, data, callback);
 	request.open("POST", url, true);
 	request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 	request.send(JSON.stringify(data));

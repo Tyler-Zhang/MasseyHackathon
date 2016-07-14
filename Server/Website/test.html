@@ -36,20 +36,62 @@
     <div class="row">
         <h1 class="text-center" style="margin-top:50px;"> Server Post Request Tester </h1>
     </div>
-        <form>
-            <div class="form-group col-xs-2 col-xs-offset-1">
-                <label for="url-selector">Post URL </label>
-                <select multiple class="form-control" id="url-selector">
-                    <option>/createroom</option>
-                    <option>/joinroom</option>
-                    <option>/report</option>
-                    <option>/view</option>
-                </select>
+    <div class="row">
+        <div class="form-horizontal col-md-5 col-md-offset-1">
+            <div class="form-group" style="margin-bottom:90px; margin-top:40px">
+                <div class="col-md-6">
+                    <label for="url-selector">Post URL </label>
+                    <select class="form-control" id="url-selector">
+                        <option>/createroom</option>
+                        <option>/joinroom</option>
+                        <option>/report</option>
+                        <option>/view</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group col-md-6 col-md-offset-2">
-                <textarea class="form-control" rows=4></textarea>
+            <div class="form-group">
+                <div class="col-md-6">
+                    <label for="attrName">Object Attribute Name</label>
+                    <input type="text" class="form-control" id="attrName" placeholder="Attribute Name"/>
+                </div>
+                <div class="col-md-6">
+                    <label for="attrName">Object Value</label>
+                    <input type="text" class="form-control" id="attrValue" placeholder="Value"/>
+                </div>
             </div>
-        </form>
+            <div class="form-group">
+                <button class="btn btn-primary" style="margin-left:13px; margin-bottom:30px" onclick="addToObj()"> Add to Obj </button>
+            </div>
+            <div class="form-group">
+                <div style="margin-left:13px">
+                    <table class="table table-bordered table-hover" style="color:black; background-color:white" id="json-table">
+                        <tr class="header">
+                            <th> Attribute Name </th>
+                            <th> Attribute Value </th>
+                            <th> Remove </th>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="form-group">
+                <div style="margin-left: 13px;">
+                    </div>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-success" style="margin-left:13px; margin-bottom:30px" onClick="post()"> Make Post Request </button>
+            </div>
+        </div>
+        <div class="row col-md-5 col-md-offset-1" style="margin-top:200px;">
+            <div class="col-md-6">
+                <label for="json-txt"> JSON representation of your object </label>
+                <textarea class="form-control" rows="7" id="json-txt" placeholder="JSON Object" readonly>{}</textarea>
+            </div>
+            <div class="col-md-6">
+                <label for="res-txt">Server Response </label>
+                <textarea class="form-control" rows="7" id="res-txt" placeholder="JSON Object" readonly></textarea>
+            </div>
+        </div>
+    </div>
     
     <script src="js/main.js"></script>
     <!-- jQuery -->
@@ -64,28 +106,77 @@
     <!-- Google Maps API Key - Use your own API key to enable the map feature. More information on the Google Maps API can be found at https://developers.google.com/maps/ -->
     <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCRngKslUGJTlibkQ3FkfTxj3Xss1UlZDA&sensor=false"></script>
 
-    <!-- Custom Theme JavaScript -->
-    <script src="js/grayscale.js"></script>
     <script type = "text/javascript">
-            document.onload = postRequest("/createroom", {type: "computer"}, (obj) => {
-                console.log(obj);
-			    if(obj.type === "SUCCESS")
-				    updateClient(obj);
-			    else
-				    displayMsg("Please try again later");
+        var obj = {};
+
+        function post()
+        {
+            postRequest(getVal("url-selector"), obj, (res) => {
+                setVal("res-txt", JSON.stringify(res));
             });
+        }
 
-            function displayMsg(msg){
-	            document.getElementById("code").innerHTML = msg;
+        function addToObj(){
+            if(getVal("attrName") == "")
+                return alert("Attribute Name Missing");
+            
+            obj[getVal("attrName")] = getVal("attrValue");
+            setVal("attrName", "");
+            setVal("attrValue", "");
+
+            redrawTable();
+
+            
+        }
+
+        function redrawTable()
+        {
+            var tbody = document.getElementById("json-table").getElementsByTagName("tbody")[0];
+            var entries = document.getElementsByClassName("entry");
+            for(var x = 0; x < entries.length; x ++)
+
+
+            var keys = Object.keys(obj);
+            for(var x = 0; x < keys.length; x++)
+            {
+                var tableEntry = document.createElement("tr");
+                tableEntry.className ="entry";
+
+                var tableData = document.createElement("td");
+                tableData.appendChild(document.createTextNode(keys[x]))
+                tableEntry.appendChild(tableData);
+
+                var tableData = document.createElement("td");
+                tableData.appendChild(document.createTextNode(obj[keys[x]]))
+                tableEntry.appendChild(tableData);
+
+                var removeButton = document.createElement("BUTTON");
+                removeButton.appendChild(document.createTextNode("Remove Attribute"));
+                removeButton.setAttribute("onClick", "removeAttr('" + keys[x] + "')")
+                removeButton.className = "btn btn-warning";
+                tableEntry.appendChild(removeButton);
+                tbody.appendChild(tableEntry);
             }
 
-            function updateClient(obj){
-                displayMsg(obj.body.grID);
-                
-                document.getElementById("button").onclick = function(){
-                    window.location = "room.html?grID=" + obj.body.grID;
-                }
-            }
+            setVal("json-txt", JSON.stringify(obj));
+        }
+
+        function removeAttr(key)
+        {
+            delete obj[key];
+            redrawTable();
+        }
+
+        function getVal(id)
+        {
+            return document.getElementById(id).value;
+        }
+
+        function setVal(id, val)
+        {
+            document.getElementById(id).value = val;
+        }
+
     </script>
 </body>
 
