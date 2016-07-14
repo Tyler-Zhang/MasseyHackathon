@@ -60,6 +60,7 @@ app.post("/joinroom", (req, res) => {
     onReq(req, res, (data) => {
         if(!checkData(res, data, ["grID", "name"]))
             return;
+        data.grID = data.grID.toUpperCase();
 
         if(data.grID.match(/^\w{5}$/) == null)                  // Make sure that they sent id of group they want to join
             resp(res, ERR, "INVALID grID")
@@ -94,7 +95,7 @@ app.post("/report", (req, res) => {
     onReq(req, res, (data) => {
         if(!checkData(res, data, ["grID", "id", "milli"]))
             return;
-
+        data.grID = data.grID.toUpperCase();
         if(data.time == null)
             logTime(data, new Date(), res);
         else
@@ -108,6 +109,9 @@ function logTime(data, date, res){
     var currHourMin = 0, lastHourMin = 0;
     var newRef = ref.child("/" + data.grID +"/users/" + data.id + "/");
     
+    if(recMinutes < 1)
+        return resp(res, ERR, "Logged time too small. Must log atleast 1 minute (60000 milli)");
+
     if(date.getMinutes() >= recMinutes){
         currHourMin = recMinutes;
         recMinutes = 0;
@@ -128,16 +132,17 @@ function logTime(data, date, res){
     log(INFO, "recMinutes: " + recMinutes + ", currHourMin: " + currHourMin + ", lastHourMin: " + lastHourMin);
     newRef.child("/" + date.getMonth() + "/" + date.getDate() + "/" + date.getHours()).once("value", (snapshot) => {
         var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
-        snapshot.ref.set(oldValue + currHourMin);
 
         if(oldValue + currHourMin > 60)
             return resp(res, ERR, "TIME KEEPING ISSUE, CURRENT HOUR USAGE EXCEEDS 60");
 
+        snapshot.ref.set(oldValue + currHourMin);
+        
         if(oldValue != 0 && lastHourMin != 0)
             return resp(res, ERR, "TIME KEEPING ISSUE, TIME SPENT THIS HOUR EXCEEDS ACTUAL TIME");
 
         if(lastHourMin == 0 && recMinutes == 0)
-            return;
+            return resp(res, SUC, "UPDATED TIME TABLES");
 
         newRef.child("/" + startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).once("value", (snapshot) => {
         var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
@@ -153,7 +158,7 @@ function logTime(data, date, res){
             startDate.add(1).hours();
             recMinutes -= 60;
         }
-        resp(res, SUC, "UPDATED TIME TABLES");
+        return resp(res, SUC, "UPDATED TIME TABLES");
         });        
     });
     
@@ -163,8 +168,9 @@ app.post("/view", (req, res) => {
     onReq(req, res, (data) => {
         if(!checkData(res, data, ["grID"]))
             return;
-
-        var newRef = ref.child(data.grID.toUpperCase());
+        
+        data.grID = data.grID.toUpperCase();
+        var newRef = ref.child(data.grID);
         log(INFO, "Request data group ID: " + data.grID + "/" + data.id)
 
         if(!!data.id)
