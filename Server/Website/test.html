@@ -140,6 +140,8 @@
 
         function change(url)
         {
+            setInner("attr-desc", "");
+            setInner("attr-opt", "");
             var def = urlDefinition[url];
             setInner("url-desc", def.desc);
 

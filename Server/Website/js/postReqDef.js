@@ -35,7 +35,7 @@ var attrDefinition = {
         opt: "Android | Computer"
     },
     name :{
-        desc: "User's name, must be present if doing /joinroom and type is <em>Android</em>",
+        desc: "User's name, must be present if doing /createroom and type is <em>Android</em>",
         opt: 'Any String'
     },
     grID :{
