@@ -48,7 +48,6 @@ public class LoginActivity extends AppCompatActivity {
         Button bJoin = (Button) findViewById(R.id.loginJoin);
         Button bCreate = (Button) findViewById(R.id.loginCreate);
         etName = (EditText) findViewById(R.id.loginName);
-        pref.edit().putString("name", etName.getText().toString()).apply();
 
         // join existing room
         bJoin.setOnClickListener(new View.OnClickListener() {
@@ -75,9 +74,10 @@ public class LoginActivity extends AppCompatActivity {
         if (etName.getText().toString().equals("")) {
             Toast.makeText(this, "Please enter a name", Toast.LENGTH_LONG).show();
             return false;
+        } else {
+            pref.edit().putString("name", etName.getText().toString()).apply();
+            return true;
         }
-
-        return true;
     }
 
     // creates room if internet connection is found

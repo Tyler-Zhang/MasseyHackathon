@@ -29,6 +29,8 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
@@ -43,6 +45,8 @@ public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private NavigationView nvDrawer;
     private ActionBarDrawerToggle drawerToggle;
+
+    private boolean isError;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,12 +63,12 @@ public class MainActivity extends AppCompatActivity {
         setupDrawerContent(nvDrawer);
         drawerToggle = setupDrawerToggle();
 
-        // test for internet
-        checkConnectivity();
-
         // set up request queue & shared preferences
         pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
         requestQueue = Volley.newRequestQueue(this);
+
+        // test for internet
+        checkConnectivity();
 
         // check if user already joined a group
         pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
@@ -92,19 +96,26 @@ public class MainActivity extends AppCompatActivity {
     private void syncFiles () {
         try {
             InputStream inputStream = openFileInput(STORETEXT);
+            isError = false;
 
             if (inputStream != null) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                String[] entry = bufferedReader.readLine().split("=");
+                BufferedReader fileReader = new BufferedReader(inputStreamReader);
+
+                String temp = fileReader.readLine();
+                Log.d("MainActivity", "line is " + temp);
+                String line = temp.substring(1);
+                String[] entry = line.split("=");
 
                 for (int i = 0; i < entry.length; i++) {
                     String[] data = entry[i].split(" ");
 
-                    String url = "http://192.168.1.112";
+                    String url = "http://192.168.1.112/report";
                     JSONObject json = new JSONObject();
 
                     try {
+                        Log.d("milli", "" + Long.parseLong(data[0]));
+                        Log.d("time", "" + Long.parseLong(data[1]));
                         json.put("grID", pref.getString("grID", "error"));
                         json.put("id", pref.getInt("id", -1));
                         json.put("milli", Long.parseLong(data[0]));
@@ -118,33 +129,42 @@ public class MainActivity extends AppCompatActivity {
                                 @Override
                                 public void onResponse(JSONObject response) {
                                     try {
-                                        Log.d("syncFiles", (String) response.get("body"));
+                                        String type = (String) response.get("type");
+
+                                        if (type.equals("SUCCESS")) {
+                                            Log.d("syncFiles", (String) response.get("body"));
+                                        } else {
+                                            Log.d("syncFiles", (String) response.get("body"));
+                                            isError = true;
+                                        }
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
                                 }
                             }, new Response.ErrorListener() {
-
                                 @Override
                                 public void onErrorResponse(VolleyError error) {
                                     error.printStackTrace();
+                                    isError = true;
                                 }
                             });
 
                     requestQueue.add(objRequest);
                 }
 
-                // delete file
+                // close input stream
+                inputStream.close();
+            }
+
+            // delete file
+            if (!isError) {
                 File dir = getFilesDir();
                 File file = new File(dir, STORETEXT);
                 boolean deleted = file.delete();
-
-                // close input stream
-                inputStream.close();
-                inputStreamReader.close();
             }
-        }
-        catch (Exception e) {
+        } catch (FileNotFoundException e) {
+            // file not created yet, ignore
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -185,7 +205,6 @@ public class MainActivity extends AppCompatActivity {
         switch(menuItem.getItemId()) {
             case R.id.nav_home:
                 fragmentClass = MainFragment.class;
-                Log.d("MAINFRAGMENT", "yay");
                 break;
             case R.id.nav_room:
 
@@ -198,7 +217,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.nav_switch:
                 fragmentClass = SwitchFragment.class;
-                Log.d("SWITCHFRAGMENT", "yay");
                 break;
             default:
                 fragmentClass = MainFragment.class;
