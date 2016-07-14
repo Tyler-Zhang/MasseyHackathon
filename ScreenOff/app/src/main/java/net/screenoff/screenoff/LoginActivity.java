@@ -1,6 +1,7 @@
 package net.screenoff.screenoff;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,7 +15,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -53,22 +53,36 @@ public class LoginActivity extends AppCompatActivity {
         // join existing room
         bJoin.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Intent intentJoin = new Intent(LoginActivity.this, JoinActivity.class);
-                startActivity(intentJoin);
+                if (isName()) {
+                    Intent intentJoin = new Intent(LoginActivity.this, JoinActivity.class);
+                    startActivity(intentJoin);
+                }
             }
         });
 
         // create new room
         bCreate.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                internetTest();
+                if (isName()) {
+                    internetTest();
+                }
             }
         });
     }
 
+    // check if name entered
+    private boolean isName() {
+        if (etName.getText().toString().equals("")) {
+            Toast.makeText(this, "Please enter a name", Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        return true;
+    }
+
     // creates room if internet connection is found
     private void createRoom() {
-        String url = "http://tylerzhang.com/createroom";
+        String url = "http://192.168.1.112/createroom";
         JSONObject json = new JSONObject();
 
         try {
@@ -89,12 +103,19 @@ public class LoginActivity extends AppCompatActivity {
                                 JSONObject body = response.getJSONObject("body");
                                 String grID = (String) body.get("grID");
                                 int id = Integer.parseInt(body.get("id").toString());
+
+                                // update preferences
                                 pref.edit().putString("grID", grID).apply();
                                 pref.edit().putInt("id", id).apply();
-                                RegisterActivity.tvCode.setText(grID);
+                                pref.edit().putBoolean("logged_in", true).apply();
+
+                                // start register activity
+                                Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+                                intent.putExtra("grID", grID);
+                                startActivity(intent);
                             } else {
                                 String error = (String) response.get("body");
-                                Log.d("ERROR", error);
+                                Log.e("ERROR", error);
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -103,14 +124,11 @@ public class LoginActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.e("Volley", "Error");
+                        error.printStackTrace();
                     }
                 });
 
         requestQueue.add(objRequest);
-
-        Intent intentCreate = new Intent(LoginActivity.this, RegisterActivity.class);
-        startActivity(intentCreate);
     }
 
     // checks for internet
