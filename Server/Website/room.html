@@ -1,19 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <head>
-        <title> ScreenOff </title>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
 
-    </head>
-    <body>
-        <div style="width:800px; height:400px; padding: 30px 30px 30px 30px">
+    <title> ScreenOff </title>
+    
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="css/grayscale.css" rel="stylesheet">
+
+    <!-- Custom Fonts -->
+    <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <link href="http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+    <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body class="container-fluid">
+    <div class="row">
+        <h1 id="heading" class="text-center" style="margin-top: 50px; margin-bottom:50px; font-weight:bold; font-size:62px; color:white"></h1>
+    </div>
+    <div class="row">
+        <div class="col-md-10 col-md-offset-1 bg-info">
+        <div class="col-md-7">
+            <canvas id="acumDayChart"></canvas>
+        </div>
+        <div class="col-md-4 col-md-offset-1">
             <canvas id="myChart"></canvas>
         </div>
-        
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/postReqDef.js"></script>
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
+    
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+    <!-- Plugin JavaScript -->
+    <script src="js/jquery.easing.min.js"></script>
+
     <script src="js/main.js"></script>
     <script src="js/Chart.js"></script>
     <script>
-
     function init(){
         var arr = document.URL.match(/grID=(.*)/);
         if(arr == null || !arr.hasOwnProperty("1"))
@@ -23,6 +65,7 @@
         }
         var room = arr[1];
         console.log("Making request with " + room);
+        setInner("heading", "Usage for room " + room);
         
         postRequest("/view", {grID: room}, (obj) => {
             if(obj.type == "ERROR")
@@ -30,12 +73,12 @@
             else if(obj.body.userAmt == 0)
                 displayError("There are no people added to your group yet");
             else {
-               	makeCharts(obj);
+                makeCharts(obj);
             }
         });
     }
     document.onload = init();
-    
+
     </script>
 </body>
 

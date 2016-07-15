@@ -47,6 +47,7 @@
                             <option>/joinroom</option>
                             <option>/report</option>
                             <option>/view</option>
+                            <option>/debuginfo</option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -57,9 +58,8 @@
             <div class="form-group">
                 <label for="attrDefault" style="margin-left:14px;">Default Fields</label>
                 <div>
-                    <div class="col-md-6">                   
-                        <select class="form-control" id="attrDefault" multiple>
-                        </select>
+                    <div class="col-md-6" style="margin-bottom:40px;">
+                        <select class="form-control" id="attrDefault" multiple></select>
                     </div>
                     <div class="col-md-6">
                         <div class="row">
@@ -127,9 +127,6 @@
 
     <!-- Plugin JavaScript -->
     <script src="js/jquery.easing.min.js"></script>
-
-    <!-- Google Maps API Key - Use your own API key to enable the map feature. More information on the Google Maps API can be found at https://developers.google.com/maps/ -->
-    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCRngKslUGJTlibkQ3FkfTxj3Xss1UlZDA&sensor=false"></script>
 
     <script type = "text/javascript">
         var obj = {};
@@ -223,26 +220,6 @@
             }
 
             setVal("json-txt", JSON.stringify(obj));
-        }
-
-        function removeAttr(key)
-        {
-            delete obj[key];
-            redrawTable();
-        }
-
-        function getVal(id)
-        {
-            return document.getElementById(id).value;
-        }
-
-        function setVal(id, val)
-        {
-            document.getElementById(id).value = val;
-        }
-        function setInner(id, val)
-        {
-            document.getElementById(id).innerHTML = val;
         }
 
     </script>

@@ -20,24 +20,26 @@ function displayError(msg){
 var colors = ["255, 99, 132", "75, 198, 172", "173, 120, 195", "237, 208, 64", "223, 130, 18"];
 function makeCharts(data)
 {
-	var ctx = document.getElementById("myChart");
-	var hourLabels = ["12:00"];
+	var ctx = document.getElementById("acumDayChart");
+	var hourLabels = ["12:00 am"];
 	var datasets = [];
 	var obj = data.body;
 	
-	for(var x = 1; x <= 24; x ++)
-		hourLabels.push(x + ":00");
+	for(var x = 1; x <= 23; x ++)
+		hourLabels.push(((x > 12)? x%12 : x) +":00 " + ((x> 12)? "pm": "am"));
+	hourLabels.push("12:00 pm");
 	
 	var date = new Date();
 
 	for(var x = 0; x < obj.userAmt; x++)
 	{
-		var usrObj = obj.users[x][date.getMonth()][date.getDate()];
-		if(usrObj == undefined)
+		var usrObj = obj.users[x][date.getMonth()];
+		if(usrObj == undefined || usrObj[date.getDate()] == undefined)
 		{
-			datasets.push(datasetObj(obj.users[x].name, null, colors[x]));
-			continue;
+			 usrObj = [];
+			 usrObj[date.getDate()] = [];
 		}
+		usrObj = usrObj[date.getDate()];
 		var data = [];
 		var total = 0;
 		for(var y = 0; y < date.getHours() + 1; y ++)
@@ -82,4 +84,25 @@ function makeCharts(data)
 				}				
 			}
 		});
+}
+
+
+function removeAttr(key)
+{
+	delete obj[key];
+	redrawTable();
+}
+
+function getVal(id)
+{
+	return document.getElementById(id).value;
+}
+
+function setVal(id, val)
+{
+	document.getElementById(id).value = val;
+}
+function setInner(id, val)
+{
+	document.getElementById(id).innerHTML = val;
 }

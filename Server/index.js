@@ -6,6 +6,12 @@ var sizeOf =    require("object-sizeof");   // Checking object of a javascript o
 var fs =        require("fs");              // Reading and writing files
 require("datejs");                          // Extension to Date() for better date handling
 
+// Usage Variables
+var totalNetworkSend = 0;       // Stores the total output in size of kb
+var totalNetworkRecieve = 0;    // Stores the total input in size of kb
+var hitCounter = 0;             // Stores how many times the server has been hit
+var totalRequestTime = 0;           // Stores the total amount of time it has taken for the server to resolve the request
+
 /* 
  * This provides the authorization for the data base
  * Currently the authorization is open anyways though
@@ -186,27 +192,44 @@ app.post("/view", (req, res) => {
     });
 });
 
+app.post("/debuginfo", (req, res) => {
+    res.json({
+        totalNetworkSend: totalNetworkSend,
+        totalNetworkRecieve: totalNetworkRecieve,
+        hitCounter: hitCounter,
+        totalRequestTime: totalRequestTime,
+        avgRequestTime: totalRequestTime / hitCounter
+    })
+});
+
 // Create web server
 http.createServer(app).listen(80, function(){
     log(INFO, "The server has been opened on port 80 \r\n");
 });
 
 // Network Functions
-
 function onReq(req, res, callBack)
 {
-    var body="";
-	req.on("data",function(data){
-		body+=data;
-		//Check to see if someone is trying to crash the server
-		if(body.length >1e6)
-			request.connection.destroy();
-	});
+    res.startTime = new Date();     // Log start time of the request
+    hitCounter++;                   // Log request count
 
-	req.on("end", () => {
-        var data = JSON.parse(body);
-        callBack(data);
-    });
+    try{
+        var body="";
+        req.on("data",function(data){
+            body+=data;
+            //Check to see if someone is trying to crash the server
+            if(body.length >1e6)
+                request.connection.destroy();
+        });
+
+        req.on("end", () => {          
+            var data = JSON.parse(body);
+            totalNetworkRecieve += sizeOf(data);
+            callBack(data);
+        });
+    } catch(err) {
+        log(ERROR, err);
+    }
 }
 
 var ERR = "ERROR";
@@ -214,11 +237,17 @@ var SUC = "SUCCESS";
 
 function resp(res, type, body)
 {
-    res.json({
+    var rtnObj = {
         type: type,
         body: body
-    }); 
-    log((type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + " [Size: " + sizeOf(body) + "]");
+    };
+    res.json(rtnObj);
+
+    totalRequestTime += new Date().getTime() - res.startTime.getTime();
+
+    var rtnObj_size = sizeOf(rtnObj);
+    totalNetworkSend += rtnObj_size;
+    log((type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + " [Size: " + rtnObj_size + "]");
 }
 
 function checkData(res, data, args)

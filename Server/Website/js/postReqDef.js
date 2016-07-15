@@ -26,6 +26,12 @@ var urlDefinition ={
             names: ["grID", "id"],
             req: [true, false]
         }    
+    },
+    "/debuginfo":{
+        desc: "Recieving statistics about the server",
+        attr: {
+
+        }
     }
 }
 
@@ -40,7 +46,7 @@ var attrDefinition = {
     },
     grID :{
         desc: "Group's identification code",
-        opt: '5 letter alphanumeric'
+        opt: '5 character alphanumeric'
     },
     id :{
         desc: "Person's index for user array on firebase",
