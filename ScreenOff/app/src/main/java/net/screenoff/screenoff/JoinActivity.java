@@ -59,7 +59,7 @@ public class JoinActivity extends AppCompatActivity {
 
     // joins room if internet connection is found
     private void joinRoom() {
-        String url ="http://192.168.1.112/joinroom";
+        String url ="http://192.168.1.104/joinroom";
         JSONObject json = new JSONObject();
 
         try {

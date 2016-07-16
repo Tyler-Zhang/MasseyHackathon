@@ -82,7 +82,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // creates room if internet connection is found
     private void createRoom() {
-        String url = "http://192.168.1.112/createroom";
+        String url = "http://192.168.1.104/createroom";
         JSONObject json = new JSONObject();
 
         try {

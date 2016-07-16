@@ -76,9 +76,14 @@ public class MainActivity extends AppCompatActivity {
         if (!pref.getBoolean("logged_in", false)) {
             loadLoginActivity();
         } else {
-            Intent i = new Intent(this, ScreenService.class);
-            startService(i);
+            // start screen service
+            if (!ScreenListenerService.isRunning) {
+                Log.d("MainActivity", "service started");
+                Intent intent = new Intent(this, ScreenListenerService.class);
+                startService(intent);
+            }
 
+            // set main fragment
             Fragment fragment = null;
 
             try {
@@ -110,12 +115,10 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < entry.length; i++) {
                     String[] data = entry[i].split(" ");
 
-                    String url = "http://192.168.1.112/report";
+                    String url = "http://192.168.1.104/report";
                     JSONObject json = new JSONObject();
 
                     try {
-                        Log.d("milli", "" + Long.parseLong(data[0]));
-                        Log.d("time", "" + Long.parseLong(data[1]));
                         json.put("grID", pref.getString("grID", "error"));
                         json.put("id", pref.getInt("id", -1));
                         json.put("milli", Long.parseLong(data[0]));
@@ -135,7 +138,6 @@ public class MainActivity extends AppCompatActivity {
                                             Log.d("syncFiles", (String) response.get("body"));
                                         } else {
                                             Log.d("syncFiles", (String) response.get("body"));
-                                            isError = true;
                                         }
                                     } catch (JSONException e) {
                                         e.printStackTrace();
