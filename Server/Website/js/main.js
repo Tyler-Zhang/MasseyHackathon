@@ -50,6 +50,10 @@ function makeCharts(data)
 		datasets.push(datasetObj(obj.users[x].name, data, colors[x]));
 	}
 
+	// Draw date accumulated chart
+	var ctx = document.getElementById("totalDayChart");
+	
+
 	function datasetObj(name, data, color)
 	{
 		var x = {};

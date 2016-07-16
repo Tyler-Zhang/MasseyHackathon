@@ -43,11 +43,6 @@
                 <div>
                     <div class="col-md-6">
                         <select class="form-control" id="url-selector" onchange="change(this.value)">
-                            <option>/createroom</option>
-                            <option>/joinroom</option>
-                            <option>/report</option>
-                            <option>/view</option>
-                            <option>/debuginfo</option>
                         </select>
                     </div>
                     <div class="col-md-6">
@@ -132,7 +127,15 @@
         var obj = {};
         
         window.onload = () => {
+            var urlSelector = document.getElementById("url-selector");
+            for(var x = 0; x < Object.keys(urlDefinition).length; x++)
+            {
+                var urlData = document.createElement("option");
+                urlData.innerHTML = Object.keys(urlDefinition)[x];
+                urlSelector.appendChild(urlData);
+            }
             change(getVal("url-selector"));
+
         }
 
         function change(url)
