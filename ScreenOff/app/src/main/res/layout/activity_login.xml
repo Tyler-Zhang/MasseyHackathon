@@ -25,7 +25,7 @@
             android:text="What is your name?"
             android:textSize="18dp"
             android:id="@+id/loginInstruction"
-            android:paddingBottom="16dp"/>
+            android:paddingBottom="8dp"/>
 
         <EditText
             android:layout_width="match_parent"

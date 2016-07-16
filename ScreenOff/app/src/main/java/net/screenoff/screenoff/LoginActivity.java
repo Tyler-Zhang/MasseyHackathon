@@ -48,6 +48,7 @@ public class LoginActivity extends AppCompatActivity {
         Button bJoin = (Button) findViewById(R.id.loginJoin);
         Button bCreate = (Button) findViewById(R.id.loginCreate);
         etName = (EditText) findViewById(R.id.loginName);
+        etName.setText(pref.getString("name", ""));
 
         // join existing room
         bJoin.setOnClickListener(new View.OnClickListener() {
