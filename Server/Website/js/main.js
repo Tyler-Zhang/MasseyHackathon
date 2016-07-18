@@ -17,12 +17,31 @@ function displayError(msg){
 	alert("ERROR: " + msg);
 }
 
+function genArray(i, tot, val) {
+		var rtnArr = [];
+		/*for(var x = 0; x < tot; x++)
+		{
+			if(x!= i)
+				rtnArr.push(null)
+			else
+				rtnArr.push(val);
+		}
+		return rtnArr;*/
+
+		rtnArr[i] = val;
+		return rtnArr
+	}
+
 var colors = ["255, 99, 132", "75, 198, 172", "173, 120, 195", "237, 208, 64", "223, 130, 18"];
 function makeCharts(data)
 {
 	var ctx = document.getElementById("acumDayChart");
+	var ctx2 = document.getElementById("totalDayChart");
+
 	var hourLabels = ["12:00 am"];
-	var datasets = [];
+	var nameLabels = [];
+
+	var accumDataset = [], totalDayDataset = [];
 	var obj = data.body;
 	
 	for(var x = 1; x <= 23; x ++)
@@ -47,36 +66,68 @@ function makeCharts(data)
 			total += ((usrObj[y] == null)? 0 : usrObj[y]);
 			data.push(total);
 		}
-		datasets.push(datasetObj(obj.users[x].name, data, colors[x]));
+		accumDataset.push(datasetObj(obj.users[x].name, [0].concat(data, "line"), colors[x]));
+		nameLabels.push(obj.users[x].name);
+		totalDayDataset.push(datasetObj(obj.users[x].name, genArray(x, obj.userAmt, total), colors[x], "bar"));
 	}
 
 	// Draw date accumulated chart
-	var ctx = document.getElementById("totalDayChart");
+	
 	
 
-	function datasetObj(name, data, color)
+	function datasetObj(name, data, color, type)
 	{
 		var x = {};
 		x.label = name;
-		x.data = [0].concat(data);
+		x.data = data;
 		x.backgroundColor = 'rgba(' + color + ',0.2)';
 		x.borderColor = 'rgba(' + color + ',1)';
 		x.borderWidth = 1;
-		x.lineTension = 0.3;
+		if(type == "line")
+		{
+			x.lineTension = 0.3;
+		}
 		return x;
 	}
-		var mChart = new Chart(ctx, {
-			type: 'line',
+
+	var mChart = new Chart(ctx, {
+		type: 'line',
+		data: {
+			labels: hourLabels,
+			datasets: accumDataset		
+		},
+		options: {
+			title: {
+				display: true,
+				fontSize: 25,
+				padding: 20,
+				text: "Acumulated Cellphone Usage for the Day by Minutes"
+			},
+			legend: {
+				position: "bottom",
+				labels: {
+					boxWidth:12,
+					fontSize:13,
+					padding: 30
+				}
+			}				
+		}
+	});
+		console.log(nameLabels);
+		console.log(totalDayDataset);
+
+		var tChart = new Chart(ctx2, {
+			type: 'bar',
 			data: {
-				labels: hourLabels,
-				datasets: datasets		
+				labels: nameLabels,
+				datasets: totalDayDataset		
 			},
 			options: {
 				title: {
 					display: true,
 					fontSize: 25,
 					padding: 20,
-					text: "Acumulated Cellphone Usage for the Day by Minutes"
+					text: "Total Usage by Day"
 				},
 				legend: {
 					position: "bottom",
@@ -85,7 +136,15 @@ function makeCharts(data)
 						fontSize:13,
 						padding: 30
 					}
-				}				
+				},
+				scales: {
+					xAxes: [{
+							stacked: true
+					}],
+					yAxes: [{
+							stacked: true
+					}]
+            	}			
 			}
 		});
 }
