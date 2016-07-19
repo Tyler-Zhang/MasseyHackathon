@@ -19,15 +19,6 @@ function displayError(msg){
 
 function genArray(i, tot, val) {
 		var rtnArr = [];
-		/*for(var x = 0; x < tot; x++)
-		{
-			if(x!= i)
-				rtnArr.push(null)
-			else
-				rtnArr.push(val);
-		}
-		return rtnArr;*/
-
 		rtnArr[i] = val;
 		return rtnArr
 	}
@@ -37,9 +28,9 @@ function makeCharts(data)
 {
 	var ctx = document.getElementById("acumDayChart");
 	var ctx2 = document.getElementById("totalDayChart");
-
 	var hourLabels = ["12:00 am"];
 	var nameLabels = [];
+	var max = 0;
 
 	var accumDataset = [], totalDayDataset = [];
 	var obj = data.body;
@@ -49,6 +40,7 @@ function makeCharts(data)
 	hourLabels.push("12:00 pm");
 	
 	var date = new Date();
+	
 
 	for(var x = 0; x < obj.userAmt; x++)
 	{
@@ -66,6 +58,7 @@ function makeCharts(data)
 			total += ((usrObj[y] == null)? 0 : usrObj[y]);
 			data.push(total);
 		}
+		max = Math.max(max, total);
 		accumDataset.push(datasetObj(obj.users[x].name, [0].concat(data, "line"), colors[x]));
 		nameLabels.push(obj.users[x].name);
 		totalDayDataset.push(datasetObj(obj.users[x].name, genArray(x, obj.userAmt, total), colors[x], "bar"));
@@ -110,43 +103,54 @@ function makeCharts(data)
 					fontSize:13,
 					padding: 30
 				}
-			}				
+			},
+			scales: {
+				yAxes: [{
+					ticks: {
+						min: 0,
+						max: Math.max(max, 100)
+					}
+				}]
+			}
 		}
 	});
-		console.log(nameLabels);
-		console.log(totalDayDataset);
-
-		var tChart = new Chart(ctx2, {
-			type: 'bar',
-			data: {
-				labels: nameLabels,
-				datasets: totalDayDataset		
+	var tChart = new Chart(ctx2, {
+		type: 'bar',
+		data: {
+			labels: nameLabels,
+			datasets: totalDayDataset		
+		},
+		options: {
+			title: {
+				display: true,
+				fontSize: 25,
+				padding: 20,
+				text: "Total Usage by Day"
 			},
-			options: {
-				title: {
-					display: true,
-					fontSize: 25,
-					padding: 20,
-					text: "Total Usage by Day"
-				},
-				legend: {
-					position: "bottom",
-					labels: {
-						boxWidth:12,
-						fontSize:13,
-						padding: 30
-					}
-				},
-				scales: {
-					xAxes: [{
-							stacked: true
-					}],
-					yAxes: [{
-							stacked: true
-					}]
-            	}			
+			legend: {
+				position: "bottom",
+				labels: {
+					boxWidth:12,
+					fontSize:13,
+					padding: 30
+				}
+			},
+			scales: {
+				xAxes: [{
+						stacked: true,
+				}],
+				yAxes: [{
+						stacked: true,
+						ticks: {
+							min: 0,
+							max: Math.max(max, 100)
+						}
+				}]
 			}
-		});
+		},
+		maintainAspectRatio: false,
+		responsive:true
+	});
 }
 
 
