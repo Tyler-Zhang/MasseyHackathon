@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="">
     <meta name="author" content="">
 
@@ -34,12 +34,12 @@
     </div>
     <div class="row">
         <div class="col-md-10 col-md-offset-1 bg-info">
-        <div class="col-md-7">
-            <canvas id="acumDayChart"></canvas>
-        </div>
-        <div class="col-md-4 col-md-offset-1">
-            <canvas id="totalDayChart"></canvas>
-        </div>
+            <div class="col-md-7">
+                <canvas id="acumDayChart"></canvas>
+            </div>
+            <div class="col-md-3 col-md-offset-1">
+                <canvas id="totalDayChart"></canvas>
+            </div>
     </div>
 
     <script src="js/main.js"></script>
@@ -57,6 +57,7 @@
     <script src="js/chart.js"></script>
     <script>
     function init(){
+        console.log(document.getElementById("totalDayChart").getContext("2d").canvas.height);
         var arr = document.URL.match(/grID=(.*)/);
         if(arr == null || !arr.hasOwnProperty("1"))
         {
