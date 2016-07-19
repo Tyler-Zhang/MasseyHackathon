@@ -26,8 +26,9 @@ function genArray(i, tot, val) {
 var colors = ["255, 99, 132", "75, 198, 172", "173, 120, 195", "237, 208, 64", "223, 130, 18"];
 function makeCharts(data)
 {
-	var ctx = document.getElementById("acumDayChart");
-	var ctx2 = document.getElementById("totalDayChart");
+	var ctx = document.getElementById("acumDayChart").getContext("2d");
+	var ctx2 = document.getElementById("totalDayChart").getContext("2d");
+	
 	var hourLabels = ["12:00 am"];
 	var nameLabels = [];
 	var max = 0;
@@ -114,6 +115,8 @@ function makeCharts(data)
 			}
 		}
 	});
+	// This is such a hack, but Chart.js is broken. It keeps resizing the canvas.
+	ctx2.canvas.height = ctx.canvas.height/1.3;
 	var tChart = new Chart(ctx2, {
 		type: 'bar',
 		data: {
@@ -128,12 +131,7 @@ function makeCharts(data)
 				text: "Total Usage by Day"
 			},
 			legend: {
-				position: "bottom",
-				labels: {
-					boxWidth:12,
-					fontSize:13,
-					padding: 30
-				}
+				display:false
 			},
 			scales: {
 				xAxes: [{
@@ -147,9 +145,7 @@ function makeCharts(data)
 						}
 				}]
 			}
-		},
-		maintainAspectRatio: false,
-		responsive:true
+		}
 	});
 }
 
