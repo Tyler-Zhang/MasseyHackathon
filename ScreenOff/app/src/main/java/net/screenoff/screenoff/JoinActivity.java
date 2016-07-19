@@ -10,7 +10,6 @@ import android.net.NetworkInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -29,7 +28,7 @@ import org.json.JSONObject;
 public class JoinActivity extends AppCompatActivity {
 
     SharedPreferences pref;
-    public static final String mypreference = "pref";
+    public static final String preference = "pref";
     RequestQueue requestQueue;
     EditText etCode;
 
@@ -42,7 +41,7 @@ public class JoinActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
+        pref = getSharedPreferences(preference, Context.MODE_PRIVATE);
         requestQueue = Volley.newRequestQueue(this);
 
         // find layout elements
@@ -59,7 +58,7 @@ public class JoinActivity extends AppCompatActivity {
 
     // joins room if internet connection is found
     private void joinRoom() {
-        String url ="http://192.168.1.104/joinroom";
+        String url ="http://tylerzhang.com/joinroom";
         JSONObject json = new JSONObject();
 
         try {

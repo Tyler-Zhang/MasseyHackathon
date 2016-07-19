@@ -1,7 +1,6 @@
 package net.screenoff.screenoff;
 
 import android.app.AlertDialog;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,7 +31,7 @@ public class LoginActivity extends AppCompatActivity {
     RequestQueue requestQueue;
     EditText etName;
     SharedPreferences pref;
-    public static final String mypreference = "pref";
+    public static final String preference = "pref";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +40,7 @@ public class LoginActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
+        pref = getSharedPreferences(preference, Context.MODE_PRIVATE);
         requestQueue = Volley.newRequestQueue(this);
 
         // find layout elements
@@ -83,7 +82,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // creates room if internet connection is found
     private void createRoom() {
-        String url = "http://192.168.1.104/createroom";
+        String url = "http://tylerzhang.com/createroom";
         JSONObject json = new JSONObject();
 
         try {

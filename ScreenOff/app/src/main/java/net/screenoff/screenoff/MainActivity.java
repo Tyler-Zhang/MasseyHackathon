@@ -37,7 +37,7 @@ import java.io.InputStreamReader;
 public class MainActivity extends AppCompatActivity {
 
     SharedPreferences pref;
-    public static final String mypreference = "pref";
+    public static final String preference = "pref";
     private final static String STORETEXT = "timedata.txt";
     RequestQueue requestQueue;
 
@@ -64,24 +64,21 @@ public class MainActivity extends AppCompatActivity {
         drawerToggle = setupDrawerToggle();
 
         // set up request queue & shared preferences
-        pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
+        pref = getSharedPreferences(preference, Context.MODE_PRIVATE);
         requestQueue = Volley.newRequestQueue(this);
 
         // test for internet
         checkConnectivity();
 
         // check if user already joined a group
-        pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
-
+        pref = getSharedPreferences(preference, Context.MODE_PRIVATE);
         if (!pref.getBoolean("logged_in", false)) {
             loadLoginActivity();
         } else {
             // start screen service
-            if (!ScreenListenerService.isRunning) {
-                Log.d("MainActivity", "service started");
-                Intent intent = new Intent(this, ScreenListenerService.class);
-                startService(intent);
-            }
+            Log.d("MainActivity", "service started");
+            Intent intent = new Intent(this, ScreenListenerService.class);
+            startService(intent);
 
             // set main fragment
             Fragment fragment = null;
@@ -98,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // sync screen data
-    private void syncFiles () {
+    private void syncFiles() {
         try {
             InputStream inputStream = openFileInput(STORETEXT);
             isError = false;
@@ -115,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < entry.length; i++) {
                     String[] data = entry[i].split(" ");
 
-                    String url = "http://192.168.1.104/report";
+                    String url = "http://tylerzhang.com/report";
                     JSONObject json = new JSONObject();
 
                     try {
@@ -204,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
         Fragment fragment = null;
         Class fragmentClass = null;
 
-        switch(menuItem.getItemId()) {
+        switch (menuItem.getItemId()) {
             case R.id.nav_home:
                 fragmentClass = MainFragment.class;
                 break;
@@ -252,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private ActionBarDrawerToggle setupDrawerToggle() {
-        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open,  R.string.drawer_close);
+        return new ActionBarDrawerToggle(this, mDrawer, toolbar, R.string.drawer_open, R.string.drawer_close);
     }
 
     @Override

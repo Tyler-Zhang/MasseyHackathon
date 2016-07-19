@@ -19,11 +19,9 @@ import java.util.Date;
 
 public class ScreenListenerService extends Service {
 
-    SharedPreferences pref;
-    public static final String mypreference = "pref";
-
+    static SharedPreferences pref;
+    public static final String preference = "pref";
     private final static String TIMEDATA = "timedata.txt";
-    static boolean isRunning = false;
 
     // create broadcast receiver to track screen on/off
     private BroadcastReceiver ScreenReceiver = new BroadcastReceiver() {
@@ -35,7 +33,7 @@ public class ScreenListenerService extends Service {
                 pref.edit().putLong("start_timer", startTimer).apply();
                 Log.d("ScreenListenerService", "screen on at " + startTimer);
             } else if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
-                writeScreenTimeToFile();
+                writeScreenTimeToFile(context);
             }
         }
     };
@@ -48,22 +46,18 @@ public class ScreenListenerService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        isRunning = true;
 
         // register broadcast receiver & set up shared preferences
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(ScreenReceiver, intentFilter);
-        pref = getSharedPreferences(mypreference, Context.MODE_PRIVATE);
+        pref = getSharedPreferences(preference, Context.MODE_PRIVATE);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // if service was restarted
-        if (intent == null) {
-            writeScreenTimeToFile();
-        }
+        writeScreenTimeToFile(this);
 
         // set start timer
         long startTimer = System.currentTimeMillis();
@@ -79,40 +73,43 @@ public class ScreenListenerService extends Service {
     }
 
     // calculate screen on time & store in file
-    private void writeScreenTimeToFile() {
+    static void writeScreenTimeToFile(Context context) {
         long endTimer = System.currentTimeMillis();
-        long startTimer = pref.getLong("start_timer", 0);
+        long startTimer = pref.getLong("start_timer", System.currentTimeMillis());
         long screenOnTime = endTimer - startTimer;
         Log.d("ScreenListenerService", "screen off at " + endTimer);
         Log.d("ScreenListenerService", "screen on time is " + screenOnTime);
 
-        InputStream inputStream;
-        String contents = "";
-        InputStreamReader inputStreamReader;
+        if (screenOnTime >= 10) {
+            InputStream inputStream;
+            String contents = "";
+            InputStreamReader inputStreamReader;
 
-        // get previous content of line
-        try {
-            inputStream = openFileInput(TIMEDATA);
+            // get previous content of line
+            try {
+                inputStream = context.openFileInput(TIMEDATA);
 
-            if (inputStream != null) {
-                inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader fileReader = new BufferedReader(inputStreamReader);
-                contents = fileReader.readLine();
-                inputStream.close();
+                if (inputStream != null) {
+                    inputStreamReader = new InputStreamReader(inputStream);
+                    BufferedReader fileReader = new BufferedReader(inputStreamReader);
+                    contents = fileReader.readLine();
+                    Log.d("ScreenListenerService", "line before update is " + contents);
+                    inputStream.close();
+                }
+            } catch (FileNotFoundException e) {
+                // file not created yet, ignore
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (FileNotFoundException e) {
-            // file not created yet, ignore
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        // write line
-        try {
-            OutputStreamWriter fileWriter = new OutputStreamWriter(openFileOutput(TIMEDATA, Context.MODE_PRIVATE));
-            fileWriter.write(contents + "=" + screenOnTime + " " + new Date().getTime());
-            fileWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            // write line
+            try {
+                OutputStreamWriter fileWriter = new OutputStreamWriter(context.openFileOutput(TIMEDATA, Context.MODE_PRIVATE));
+                fileWriter.write(contents + "=" + screenOnTime + " " + new Date().getTime());
+                fileWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
