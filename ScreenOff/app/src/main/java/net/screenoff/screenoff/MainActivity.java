@@ -113,7 +113,10 @@ public class MainActivity extends AppCompatActivity {
 
                 break;
             case R.id.nav_switch:
-                fragmentClass = SwitchFragment.class;
+                pref.edit().remove("grID").apply();
+                pref.edit().remove("id").apply();
+                Intent i = new Intent(MainActivity.this, LoginActivity.class);
+                startActivity(i);
                 break;
             default:
                 fragmentClass = MainFragment.class;

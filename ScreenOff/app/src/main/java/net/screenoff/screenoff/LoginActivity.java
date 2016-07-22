@@ -133,7 +133,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // checks for internet
     private boolean checkConnectivity() {
-        boolean connected = false;
+        boolean connected;
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
                 connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
