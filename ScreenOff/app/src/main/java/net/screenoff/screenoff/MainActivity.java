@@ -4,8 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
@@ -16,30 +14,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import android.view.View;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
     SharedPreferences pref;
     public static final String preference = "pref";
-    private final static String STORETEXT = "timedata.txt";
-    RequestQueue requestQueue;
 
     private DrawerLayout mDrawer;
     private Toolbar toolbar;
@@ -63,15 +44,15 @@ public class MainActivity extends AppCompatActivity {
         setupDrawerContent(nvDrawer);
         drawerToggle = setupDrawerToggle();
 
-        // set up request queue & shared preferences
+        // get shared preferences
         pref = getSharedPreferences(preference, Context.MODE_PRIVATE);
-        requestQueue = Volley.newRequestQueue(this);
 
-        // test for internet
-        checkConnectivity();
+        // set up header text
+        View headerView = nvDrawer.getHeaderView(0);
+        TextView tvHeader = (TextView) headerView.findViewById(R.id.header_text);
+        tvHeader.setText("Room code: " + pref.getString("grID", "error"));
 
         // check if user already joined a group
-        pref = getSharedPreferences(preference, Context.MODE_PRIVATE);
         if (!pref.getBoolean("logged_in", false)) {
             loadLoginActivity();
         } else {
@@ -91,89 +72,6 @@ public class MainActivity extends AppCompatActivity {
 
             FragmentManager fragmentManager = getSupportFragmentManager();
             fragmentManager.beginTransaction().replace(R.id.frame, fragment).commit();
-        }
-    }
-
-    // sync screen data
-    private void syncFiles() {
-        try {
-            InputStream inputStream = openFileInput(STORETEXT);
-            isError = false;
-
-            if (inputStream != null) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-                BufferedReader fileReader = new BufferedReader(inputStreamReader);
-
-                String temp = fileReader.readLine();
-                Log.d("MainActivity", "line is " + temp);
-                String line = temp.substring(1);
-                String[] entry = line.split("=");
-
-                for (int i = 0; i < entry.length; i++) {
-                    String[] data = entry[i].split(" ");
-
-                    String url = "http://tylerzhang.com/report";
-                    JSONObject json = new JSONObject();
-
-                    try {
-                        json.put("grID", pref.getString("grID", "error"));
-                        json.put("id", pref.getInt("id", -1));
-                        json.put("milli", Long.parseLong(data[0]));
-                        json.put("time", Long.parseLong(data[1]));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    JsonObjectRequest objRequest = new JsonObjectRequest
-                            (Request.Method.POST, url, json, new Response.Listener<JSONObject>() {
-                                @Override
-                                public void onResponse(JSONObject response) {
-                                    try {
-                                        String type = (String) response.get("type");
-
-                                        if (type.equals("SUCCESS")) {
-                                            Log.d("syncFiles", (String) response.get("body"));
-                                        } else {
-                                            Log.d("syncFiles", (String) response.get("body"));
-                                        }
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }, new Response.ErrorListener() {
-                                @Override
-                                public void onErrorResponse(VolleyError error) {
-                                    error.printStackTrace();
-                                    isError = true;
-                                }
-                            });
-
-                    requestQueue.add(objRequest);
-                }
-
-                // close input stream
-                inputStream.close();
-            }
-
-            // delete file
-            if (!isError) {
-                File dir = getFilesDir();
-                File file = new File(dir, STORETEXT);
-                boolean deleted = file.delete();
-            }
-        } catch (FileNotFoundException e) {
-            // file not created yet, ignore
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // check internet connection
-    private void checkConnectivity() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).getState() == NetworkInfo.State.CONNECTED ||
-                connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED) {
-            syncFiles();
         }
     }
 

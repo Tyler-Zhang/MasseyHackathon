@@ -105,7 +105,7 @@ public class ScreenListenerService extends Service {
             // write line
             try {
                 OutputStreamWriter fileWriter = new OutputStreamWriter(context.openFileOutput(TIMEDATA, Context.MODE_PRIVATE));
-                fileWriter.write(contents + "=" + screenOnTime + " " + new Date().getTime());
+                fileWriter.write(contents + "=" + screenOnTime + " " + endTimer);
                 fileWriter.close();
             } catch (IOException e) {
                 e.printStackTrace();

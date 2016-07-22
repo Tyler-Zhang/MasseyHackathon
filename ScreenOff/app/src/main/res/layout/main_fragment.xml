@@ -19,7 +19,7 @@
         android:textSize="50dp"
         android:gravity="center"
         android:text="00:00:00"
-        android:id="@+id/mainTimeToday"/>
+        android:id="@+id/sot_today"/>
 
     <TextView
         android:layout_width="match_parent"

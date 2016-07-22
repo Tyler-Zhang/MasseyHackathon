@@ -42,6 +42,7 @@ public class NetworkReceiver extends BroadcastReceiver {
 
         if (isOnline(context)) {
             Toast.makeText(context, "Internet connected", Toast.LENGTH_LONG).show();
+            syncFiles(context);
         } else {
             Toast.makeText(context, "Internet disconnected", Toast.LENGTH_LONG).show();
         }

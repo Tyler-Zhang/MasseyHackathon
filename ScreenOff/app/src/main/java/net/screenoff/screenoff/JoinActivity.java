@@ -81,6 +81,7 @@ public class JoinActivity extends AppCompatActivity {
 
                                 // update shared preferences
                                 pref.edit().putInt("id", id).apply();
+                                pref.edit().putString("grID", etCode.getText().toString().toUpperCase()).apply();
                                 pref.edit().putBoolean("logged_in", true).apply();
 
                                 // start main activity

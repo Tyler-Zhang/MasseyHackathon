@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:text="Enter room code below:"
             android:textSize="16dp"
-            android:paddingBottom="16dp"/>
+            android:paddingBottom="8dp"/>
 
         <EditText
             android:layout_width="match_parent"
