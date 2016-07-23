@@ -167,4 +167,9 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    // disable back button
+    @Override
+    public void onBackPressed() {
+    }
+
 }

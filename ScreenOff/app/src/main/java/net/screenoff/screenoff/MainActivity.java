@@ -117,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
                 pref.edit().remove("id").apply();
                 Intent i = new Intent(MainActivity.this, LoginActivity.class);
                 startActivity(i);
+                fragmentClass = MainFragment.class;
                 break;
             default:
                 fragmentClass = MainFragment.class;

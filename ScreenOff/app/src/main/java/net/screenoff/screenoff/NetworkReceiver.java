@@ -25,15 +25,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 
 public class NetworkReceiver extends BroadcastReceiver {
 
-    private boolean isError;
-    private final static String STORETEXT = "timedata.txt";
+    private final static String TIME_DATA = "timedata.txt";
 
     SharedPreferences pref;
     public static final String mypreference = "pref";
     RequestQueue requestQueue;
+
+    String line;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -56,21 +58,21 @@ public class NetworkReceiver extends BroadcastReceiver {
     }
 
     // sync screen data
-    private void syncFiles (Context context) {
+    private void syncFiles (final Context context) {
         try {
-            InputStream inputStream = context.openFileInput(STORETEXT);
-            isError = false;
+            InputStream inputStream = context.openFileInput(TIME_DATA);
 
             if (inputStream != null) {
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
                 BufferedReader fileReader = new BufferedReader(inputStreamReader);
 
-                String temp = fileReader.readLine();
-                Log.d("MainActivity", "line is " + temp);
-                String line = temp.substring(1);
-                String[] entry = line.split("=");
+                line = fileReader.readLine();
+                Log.d("MainActivity", "line is " + line);
+                String temp = line.substring(1);
+                String[] entry = temp.split("=");
 
                 for (int i = 0; i < entry.length; i++) {
+                    final String curEntry = entry[i];
                     String[] data = entry[i].split(" ");
 
                     String url = "http://tylerzhang.com/report";
@@ -97,6 +99,25 @@ public class NetworkReceiver extends BroadcastReceiver {
                                         } else {
                                             Log.d("syncFiles", (String) response.get("body"));
                                         }
+
+                                        try {
+                                            OutputStreamWriter fileWriter = new OutputStreamWriter(context.openFileOutput(TIME_DATA, Context.MODE_PRIVATE));
+                                            line = line.replace("=" + curEntry, "");
+
+                                            if (line.equals("")) {
+                                                File dir = context.getFilesDir();
+                                                File file = new File(dir, TIME_DATA);
+                                                boolean deleted = file.delete();
+                                                Log.d("NetworkReceiver", "file deleted");
+                                            } else {
+                                                fileWriter.write(line);
+                                                Log.d("NetworkReceiver", "new line is " + line);
+                                            }
+
+                                            fileWriter.close();
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
@@ -105,7 +126,6 @@ public class NetworkReceiver extends BroadcastReceiver {
                                 @Override
                                 public void onErrorResponse(VolleyError error) {
                                     error.printStackTrace();
-                                    isError = true;
                                 }
                             });
 
@@ -114,13 +134,6 @@ public class NetworkReceiver extends BroadcastReceiver {
 
                 // close input stream
                 inputStream.close();
-            }
-
-            // delete file
-            if (!isError) {
-                File dir = context.getFilesDir();
-                File file = new File(dir, STORETEXT);
-                boolean deleted = file.delete();
             }
         } catch (FileNotFoundException e) {
             // file not created yet, ignore
