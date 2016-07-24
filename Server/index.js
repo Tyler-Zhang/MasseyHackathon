@@ -79,7 +79,6 @@ app.post("/joinroom", (req, res) => {
 function addToRoom(data, res){
     var func = function(snapshot){
         var obj = snapshot.val();
-        console.log(obj);
         if(obj == null)
         {
             resp(res, ERR, "grID NOT FOUND");
@@ -169,7 +168,7 @@ function logTime(data, date, res){
     });
     
 }
-
+// Includes start and end date
 app.post("/view", (req, res) => {
     onReq(req, res, (data) => {
         if(!checkData(res, data, ["grID"]))
@@ -177,20 +176,91 @@ app.post("/view", (req, res) => {
         
         data.grID = data.grID.toUpperCase();
         var newRef = ref.child(data.grID);
-        log(INFO, "Request data group ID: " + data.grID + "/" + data.id)
 
         if(!!data.id)
-            newRef = newRef.child(data.id);
-
+            newRef = newRef.child("/users/" + data.id);
+        
+        log(INFO, "Request data group ID: " + newRef);
         newRef.once("value", (snapshot) => {
             var obj = snapshot.val();
+            log(INFO, obj);
             if(obj == null)
-                resp(res, ERR, "Group [" + data.grID + "]Doesn't Exist");
-            else
-                resp(res, SUC, snapshot.val());
+                return resp(res, ERR, "Group [" + data.grID + "]Doesn't Exist");
+            
+            if(!data.startDate && !data.endDate)
+                return resp(res, SUC, obj);
+            
+            if(!!data.startDate ^ !!data.endDate)
+                return resp(res, ERR, "Must of both or either startDate and endDate");
+
+            var start = data.startDate.split("/");
+            var end = data.endDate.split("/");
+            var rtnObj = {};
+            var firstMonth = {};
+
+            for(var day = start[1]; day <= ((start[0] == end[0])? end[1] : 31); day++)
+            {
+                if(!obj[start[0]] || !obj[start[0]][day])
+                    continue;
+                firstMonth[day] = obj[start[0]][day];
+            }
+            rtnObj[start[0]] = firstMonth;
+            for(var month = start[0] + 1; month < end[0]; month ++)
+            {
+                if(!obj[month])
+                    continue;
+                rtnObj[month] = obj[month];
+            }
+            if(start[1] != end[1])
+            {
+                var lastMonth = {};
+                for(var day = 1; day <= end[1]; day ++)
+                {
+                    if(!obj[end[0]] || !obj[end[0]][end[1]])
+                        continue;
+                    lastMonth[day] = obj[end[0]][end[1]];
+                }
+            }
+            
+            //Count the total time
+            var months = Object.keys(rtnObj);
+            var total = 0;
+            for(var x = 0; x < months.length; x++)
+            {
+                var currMonth = rtnObj[months[x]];
+                var days = Object.keys(currMonth);
+
+                for(var y = 0; y < days.length; y++)
+                {
+                    var currDay = currMonth[days[y]];
+                    var hours = Object.keys(currDay);
+                    for(var z = 0; z < hours.length; z++)
+                    {
+                        total += currDay[hours[z]];
+                    }
+                }
+            }
+            rtnObj.total = recurAdd(rtnObj, 2);
+            resp(res, SUC, rtnObj);
+
         });
     });
 });
+
+function recurAdd(obj, level)
+{
+    var keys = Object.keys(obj);
+    var total = 0;
+
+    if(level == 0)
+        for(var x = 0; x < keys.length; x++)
+            total += obj[keys[x]];
+    else 
+        for(var x = 0; x < keys.length; x++)
+            total += recurAdd(obj[keys[x]], level-1);
+    
+    return total;
+}
 
 app.post("/debuginfo", (req, res) => {
     res.json({

@@ -23,8 +23,8 @@ var urlDefinition ={
     "/view":{
         desc: "Getting screen on data",
         attr: {
-            names: ["grID", "id"],
-            req: [true, false]
+            names: ["grID", "id", "startDate", "endDate"],
+            req: [true, false, false, false]
         }    
     },
     "/debuginfo":{
@@ -36,7 +36,7 @@ var urlDefinition ={
 }
 
 var attrDefinition = {
-    type: {
+    type :{
         desc: "Type of user's device",
         opt: "Android | Computer"
     },
@@ -52,12 +52,20 @@ var attrDefinition = {
         desc: "Person's index for user array on firebase",
         opt: 'Positive Interger Number'
     },
-    milli: {
+    milli :{
         desc: "Screen on time in milliseconds",
         opt: "Positive Interger Number"
     },
-    time : {
+    time :{
         desc: "Time when the screen-on session ended, used for reporting offline tracks",
         opt: "UTC time in milliseconds"
+    },
+    startDate :{
+        desc: "The beginning, <em> inclusive </em>, time of data to be returned. Only used when id is specified",
+        opt: "Month/Day - Months start at 0"
+    },
+    endDate :{
+        desc: "The ending, <em> inclusive </em>, time of data to be returned. Only used when id is specified",
+        opt: "Month/Day - Months start at 0"
     }
 }
