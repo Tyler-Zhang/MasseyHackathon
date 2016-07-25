@@ -11,7 +11,7 @@ var totalNetworkSend = 0;       // Stores the total output in size of kb
 var totalNetworkRecieve = 0;    // Stores the total input in size of kb
 var hitCounter = 0;             // Stores how many times the server has been hit
 var totalRequestTime = 0;           // Stores the total amount of time it has taken for the server to resolve the request
-
+var debugMode = false;
 /* 
  * This provides the authorization for the data base
  * Currently the authorization is open anyways though
@@ -188,8 +188,10 @@ app.post("/view", (req, res) => {
                 return resp(res, ERR, "Group [" + data.grID + "]Doesn't Exist");
             
             if(!data.startDate && !data.endDate)
+            {
+                //obj.total = recurAdd(rtnObj, 6);
                 return resp(res, SUC, obj);
-            
+            }
             if(!!data.startDate ^ !!data.endDate)
                 return resp(res, ERR, "Must of both or either startDate and endDate");
 
@@ -219,25 +221,6 @@ app.post("/view", (req, res) => {
                     if(!obj[end[0]] || !obj[end[0]][end[1]])
                         continue;
                     lastMonth[day] = obj[end[0]][end[1]];
-                }
-            }
-            
-            //Count the total time
-            var months = Object.keys(rtnObj);
-            var total = 0;
-            for(var x = 0; x < months.length; x++)
-            {
-                var currMonth = rtnObj[months[x]];
-                var days = Object.keys(currMonth);
-
-                for(var y = 0; y < days.length; y++)
-                {
-                    var currDay = currMonth[days[y]];
-                    var hours = Object.keys(currDay);
-                    for(var z = 0; z < hours.length; z++)
-                    {
-                        total += currDay[hours[z]];
-                    }
                 }
             }
             rtnObj.total = recurAdd(rtnObj, 2);
@@ -300,6 +283,10 @@ function onReq(req, res, callBack)
     } catch(err) {
         log(ERROR, err);
     }
+
+    res.on("close", () => {
+        console.log("On close : " + new Date().getTime());
+    });
 }
 
 var ERR = "ERROR";
@@ -312,7 +299,7 @@ function resp(res, type, body)
         body: body
     };
     res.json(rtnObj);
-
+    console.log("On send: " + new Date().getTime());
     totalRequestTime += new Date().getTime() - res.startTime.getTime();
 
     var rtnObj_size = sizeOf(rtnObj);
