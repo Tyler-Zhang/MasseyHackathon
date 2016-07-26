@@ -11,7 +11,7 @@ var totalNetworkSend = 0;       // Stores the total output in size of kb
 var totalNetworkRecieve = 0;    // Stores the total input in size of kb
 var hitCounter = 0;             // Stores how many times the server has been hit
 var totalRequestTime = 0;           // Stores the total amount of time it has taken for the server to resolve the request
-var debugMode = false;
+var debugMode = true;
 /* 
  * This provides the authorization for the data base
  * Currently the authorization is open anyways though
@@ -183,13 +183,12 @@ app.post("/view", (req, res) => {
         log(INFO, "Request data group ID: " + newRef);
         newRef.once("value", (snapshot) => {
             var obj = snapshot.val();
-            log(INFO, obj);
             if(obj == null)
                 return resp(res, ERR, "Group [" + data.grID + "]Doesn't Exist");
             
             if(!data.startDate && !data.endDate)
             {
-                //obj.total = recurAdd(rtnObj, 6);
+                obj.total = recurAdd(obj, 4);
                 return resp(res, SUC, obj);
             }
             if(!!data.startDate ^ !!data.endDate)
@@ -197,6 +196,10 @@ app.post("/view", (req, res) => {
 
             var start = data.startDate.split("/");
             var end = data.endDate.split("/");
+
+            if(start.length != 2 || end.length != 2)
+                return resp(res, ERR, "Dates are formmated incorrectly. Should be Month/Day");
+
             var rtnObj = {};
             var firstMonth = {};
 
@@ -225,14 +228,18 @@ app.post("/view", (req, res) => {
             }
             rtnObj.total = recurAdd(rtnObj, 2);
             resp(res, SUC, rtnObj);
-
         });
     });
 });
 
 function recurAdd(obj, level)
 {
+    if(typeof(obj) != "object")
+        return 0;
     var keys = Object.keys(obj);
+    if(keys.length == 0)
+        return 0;
+        
     var total = 0;
 
     if(level == 0)
@@ -298,13 +305,17 @@ function resp(res, type, body)
         type: type,
         body: body
     };
+    var requestTime = new Date().getTime() - res.startTime.getTime();
+    if(debugMode)
+        rtnObj.responseTime = requestTime;
     res.json(rtnObj);
     console.log("On send: " + new Date().getTime());
-    totalRequestTime += new Date().getTime() - res.startTime.getTime();
+    totalRequestTime += requestTime;
 
     var rtnObj_size = sizeOf(rtnObj);
     totalNetworkSend += rtnObj_size;
-    log((type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + " [Size: " + rtnObj_size + "]");
+    log((type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
+    " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"]");
 }
 
 function checkData(res, data, args)
