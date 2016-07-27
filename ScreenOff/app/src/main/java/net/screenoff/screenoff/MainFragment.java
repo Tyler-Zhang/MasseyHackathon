@@ -1,7 +1,6 @@
 package net.screenoff.screenoff;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v4.app.Fragment;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -9,9 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -33,53 +30,23 @@ public class MainFragment extends Fragment {
 
     SharedPreferences pref;
     public static final String mypreference = "pref";
-    RequestQueue requestQueue;
+
+    TextView tvToday;
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.main_fragment,container,false);
         pref = getContext().getSharedPreferences(mypreference, Context.MODE_PRIVATE);
 
-        final TextView tvToday = (TextView) v.findViewById(R.id.sot_today);
-        requestQueue = Volley.newRequestQueue(getActivity());
+        tvToday = (TextView) v.findViewById(R.id.sot_today);
 
-        String url ="http://tylerzhang.com/view";
-        JSONObject json = new JSONObject();
+        int todayTotal = pref.getInt("today_total", 0);
 
-        try {
-            json.put("grID", pref.getString("grID", "error"));
-            json.put("name", pref.getString("name", "error"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Calendar sot = Calendar.getInstance();
+        sot.set(Calendar.HOUR_OF_DAY, todayTotal / 60);
+        sot.set(Calendar.MINUTE, todayTotal % 60);
 
-        JsonObjectRequest objRequest = new JsonObjectRequest
-                (Request.Method.POST, url, json, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            String type = (String) response.get("type");
-
-                            if (type.equals("SUCCESS")) {
-                                JSONObject body = response.getJSONObject("body");
-                                // get time today
-                            } else {
-                                String error = (String) response.get("body");
-
-                                tvToday.setText(error);
-                                Log.e("ERROR", error);
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        error.printStackTrace();
-                    }
-                });
-
-        requestQueue.add(objRequest);
+        Date date = sot.getTime();
+        tvToday.setText(new SimpleDateFormat("HH:mm").format(date));
 
         return v;
     }

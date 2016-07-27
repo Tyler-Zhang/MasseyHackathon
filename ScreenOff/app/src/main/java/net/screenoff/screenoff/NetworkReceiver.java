@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 public class NetworkReceiver extends BroadcastReceiver {
 
@@ -45,6 +47,7 @@ public class NetworkReceiver extends BroadcastReceiver {
         if (isOnline(context)) {
             Toast.makeText(context, "Internet connected", Toast.LENGTH_LONG).show();
             syncFiles(context);
+            updateData(context);
         } else {
             Toast.makeText(context, "Internet disconnected", Toast.LENGTH_LONG).show();
         }
@@ -140,6 +143,53 @@ public class NetworkReceiver extends BroadcastReceiver {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void updateData (Context context) {
+        String url = "http://tylerzhang.com/view";
+        JSONObject json = new JSONObject();
+        Calendar today = Calendar.getInstance();
+        int month = today.MONTH;
+        int day = today.DAY_OF_MONTH;
+
+        try {
+            json.put("grID", pref.getString("grID", "error"));
+            json.put("name", pref.getString("name", "error"));
+            json.put("startDate", month + "/" + day);
+            json.put("endDate", month + "/" + day);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest objRequest = new JsonObjectRequest
+                (Request.Method.POST, url, json, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            String type = (String) response.get("type");
+
+                            if (type.equals("SUCCESS")) {
+                                JSONObject body = response.getJSONObject("body");
+                                int total = Integer.parseInt(body.get("total").toString());
+
+                                Log.d("NetworkReceiver", "total is " + total + " minutes");
+                                pref.edit().putInt("today_total", total).apply();
+                            } else {
+                                String error = (String) response.get("body");
+                                Log.e("ERROR", error);
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        error.printStackTrace();
+                    }
+                });
+
+        requestQueue.add(objRequest);
     }
     
 }
