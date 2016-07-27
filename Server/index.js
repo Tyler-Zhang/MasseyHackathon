@@ -53,7 +53,7 @@ app.post("/createroom", (req, res) => {
                     0: {name: data.name}                        // Create the group with one user inplace
                 }
             });
-            resp(res, SUC, {grID: code, id: 1});
+            resp(res, SUC, {grID: code, id: 0});
         } else {
             resp(res, ERR, "MUST SPECIFY DEVICE AS EITHER COMPUTER OR ANDROID");
             return;
