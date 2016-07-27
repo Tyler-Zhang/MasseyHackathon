@@ -7,7 +7,7 @@
     "chart.js": "^2.1.6",
     "datejs": "^1.0.0-rc3",
     "express": "^4.13.4",
-    "firebase": "^3.1.0",
+    "mongodb": "^2.2.4",
     "path": "^0.12.7"
   },
   "devDependencies": {

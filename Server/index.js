@@ -1,9 +1,11 @@
 var http =      require("http");            // Launching the HTML server
 var express =   require("express");         // Handling get/post requests
 var path =      require("path");            // Joing paths
-var firebase =  require("firebase");        // Linking up to the firebase server
 var sizeOf =    require("object-sizeof");   // Checking object of a javascript object
 var fs =        require("fs");              // Reading and writing files
+var mongoCli =  require("mongodb")          // Connecting to the mongo Database
+.MongoClient; 
+
 require("datejs");                          // Extension to Date() for better date handling
 
 // Usage Variables
@@ -12,19 +14,20 @@ var totalNetworkRecieve = 0;    // Stores the total input in size of kb
 var hitCounter = 0;             // Stores how many times the server has been hit
 var totalRequestTime = 0;           // Stores the total amount of time it has taken for the server to resolve the request
 var debugMode = true;
-/* 
- * This provides the authorization for the data base
- * Currently the authorization is open anyways though
-*/
-firebase.initializeApp({
-  serviceAccount: "jsonAuth.json",
-  databaseURL: "https://project-3886157552181854094.firebaseio.com/"
+
+// Database declaration and functions
+var db;
+
+mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
+    if(err)
+    {
+        log(ERROR, err);
+        throw "Database didn't connect correctly";
+    } else {
+        log(INFO, "Connected to the server")
+        db = d.collection("ScreenTime");
+    }
 });
-
-var db = firebase.database();
-var ref = db.ref();                 // Ref is the reference to the values in the data base
-
-
 // Web paths
 var app = express();
 app.use(express.static(path.join(__dirname, "Website")));
@@ -38,28 +41,24 @@ app.post("/createroom", (req, res) => {
             return;
 
         var code = genChars(5);
-
-        if(data.type == 'computer'){                            // If the device type is a computer
-            ref.child("/" + code).update({                      // Create the group object on firebase
-                userAmt: 0,                                     // Amount of people in the group 
+        data.type = data.type.toLowerCase();;
+        if(data.type == "computer")
+            db.insertOne({grID:code, usrAmt: 0}, (err, r) => {
+                if(err)
+                    resp(res, ERR, "Couldn't update database");
+                else
+                    resp(res, SUC, {grId: code});
             });
-            resp(res, SUC,  {grID: code})
-        } else if(data.type == "android"){                                                // If request type is an android device
-            if(!checkData(res, data, ["name"]))
-                return;
-            ref.child("/" + code).update({
-                userAmt: 1,
-                users: {
-                    0: {name: data.name}                        // Create the group with one user inplace
-                }
-            });
-            resp(res, SUC, {grID: code, id: 1});
-        } else {
-            resp(res, ERR, "MUST SPECIFY DEVICE AS EITHER COMPUTER OR ANDROID");
-            return;
-        }
-        log(INFO, "Created new room with code: "+ code + " Type: " + data.type);
-    })
+        else if(data.type == 'android')
+            db.insertOne({grID:code, usrAmt: 1, users: {0: {name: data.name}}}, (err, r) => {
+                    if(err)
+                        resp(res, ERR, "Couldn't update database");
+                    else
+                        resp(res, SUC, {grId: code, id: 0});
+                });
+        else
+            return resp(res, ERR, "Type must be {computer || android}");
+    });
 });
 
 app.post("/joinroom", (req, res) => {
@@ -69,7 +68,7 @@ app.post("/joinroom", (req, res) => {
         data.grID = data.grID.toUpperCase();
 
         if(data.grID.match(/^\w{5}$/) == null)                  // Make sure that they sent id of group they want to join
-            resp(res, ERR, "INVALID grID")
+            resp(res, ERR, "INVALID grID");
         else
             addToRoom(data, res);
     });
@@ -290,10 +289,6 @@ function onReq(req, res, callBack)
     } catch(err) {
         log(ERROR, err);
     }
-
-    res.on("close", () => {
-        console.log("On close : " + new Date().getTime());
-    });
 }
 
 var ERR = "ERROR";
@@ -309,7 +304,6 @@ function resp(res, type, body)
     if(debugMode)
         rtnObj.responseTime = requestTime;
     res.json(rtnObj);
-    console.log("On send: " + new Date().getTime());
     totalRequestTime += requestTime;
 
     var rtnObj_size = sizeOf(rtnObj);
