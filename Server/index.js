@@ -41,7 +41,8 @@ app.post("/createroom", (req, res) => {
             return;
 
         var code = genChars(5);
-        data.type = data.type.toLowerCase();;
+        data.type = data.type.toLowerCase();
+        
         if(data.type == "computer")
             db.insertOne({grID:code, usrAmt: 0}, (err, r) => {
                 if(err)
