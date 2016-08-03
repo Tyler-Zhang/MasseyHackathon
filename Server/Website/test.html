@@ -69,11 +69,12 @@
             <div class="form-group">
                 <div class="col-md-6">
                     <label for="attrName">Object Attribute Name</label>
-                    <input type="text" class="form-control" id="attrName" placeholder="Attribute Name"/>
+                    <input type="text" class="form-control" id="attrName" placeholder="Attribute Name" list="attrNameOptions"/>
+                    <datalist id="attrNameOptions"></datalist>
                 </div>
                 <div class="col-md-6">
                     <label for="attrName">Object Value</label>
-                    <input type="text" class="form-control" id="attrValue" placeholder="Value"/>
+                    <input type="text" class="form-control" id="attrValue" placeholder="Value" onkeydown="keyDown(event)"/>
                 </div>
             </div>
             <div class="form-group">
@@ -146,9 +147,11 @@
             setInner("url-desc", def.desc);
 
             var attrDef = document.getElementById("attrDefault");
+            var attrNameOptions = document.getElementById("attrNameOptions");
             for(var x = 0; x < attrDef.children.length; x++)
                 attrDef.removeChild(attrDef.children[x--]);
             
+
             for(var x = 0; x < def.attr.names.length; x++)
             {
                 var attrData = document.createElement("option");
@@ -158,6 +161,9 @@
                 if(def.attr.req[x])
                     attrData.className = "bg-success";
                 attrDef.appendChild(attrData);
+                var attrData = document.createElement("option");
+                attrData.setAttribute("value", def.attr.names[x]);
+                attrNameOptions.appendChild(attrData);
             }  
         }
         
@@ -223,6 +229,17 @@
             }
 
             setVal("json-txt", JSON.stringify(obj));
+        }
+
+        function keyDown(e)
+        {
+            if(e.key == "Enter")
+                if(e.ctrlKey)
+                    post();
+                else if(e.altKey)
+                    clrObj();
+                else
+                    addToObj();
         }
 
     </script>
