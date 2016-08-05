@@ -16,7 +16,7 @@ var totalRequestTime = 0;           // Stores the total amount of time it has ta
 var debugMode = true;
 
 // Database declaration and functions
-var db;
+var db, col;
 
 mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
     if(err)
@@ -25,7 +25,8 @@ mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
         throw "Database didn't connect correctly";
     } else {
         log(INFO, "Connected to the server")
-        db = d.collection("ScreenTime");
+        db = d;
+        col = d.collection("ScreenTime");
     }
 });
 // Web paths
@@ -54,7 +55,7 @@ addPostListener("createroom", (res, data) => {                                 /
         rtnObj = {grID:code, id: 0};
         postObj = {grID:code, usrAmt: 1, users: {0: {name: data.name}}};
     }        
-    db.insertOne(postObj).then( x => resp(res, SUC, rtnObj), x => resp(res, ERR, "Couldn't updated database"));
+    col.insertOne(postObj).then( x => resp(res, SUC, rtnObj), x => resp(res, ERR, "Couldn't updated database"));
 });
 
 addPostListener("joinroom", (res, data) => {
@@ -65,35 +66,30 @@ addPostListener("joinroom", (res, data) => {
     if(data.grID.match(/^\w{5}$/) == null)                  // Make sure that they sent id of group they want to join
         return resp(res, ERR, "INVALID grID");
     
-    //db.findOne({grID: data.grID}, {})
+    col.findOne({grID: data.grID}, {usrAmt:1})
+    .then(d => {
+        if(!d)
+            throw "Object with grID [" + data.grID + "] not found";
+        var setObj = {};
+        setObj["users." + d.usrAmt] = {name: data.name};
+        return col.updateOne({_id:d._id}, {$set:setObj}, {upsert:true}).then(() => {return d});
+    })
+    .then(d => {
+        return col.updateOne({_id: d._id}, {$set: {usrAmt: d.usrAmt + 1}}).then(() => {return d.usrAmt});
+    })
+    .then(d => {
+        resp(res, SUC, {grID: d + 1});
+    })
+    .catch(e => {
+         resp(res, ERR, e);});
 });
-
-// Data takes rmID, id, and minutes
-function addToRoom(data, res){
-    var func = function(snapshot){
-        var obj = snapshot.val();
-        if(obj == null)
-        {
-            resp(res, ERR, "grID NOT FOUND");
-            return;
-        }
-        var func = function(snapshot){
-            var usrAmt = snapshot.val();
-            ref.child("/"+data.grID+"/userAmt").set(usrAmt+1);
-            ref.child("/"+data.grID+"/users/" + (usrAmt)).update({name: data.name});
-            resp(res, SUC, {id: usrAmt});
-            log(INFO, "User [" + data.name + "] successfully joined  room [" + data.grID + "] width id [" + usrAmt +"]")
-        }
-        ref.child("/"+data.grID+"/userAmt").once("value",func);
-    }
-    ref.child("/"+data.grID).once("value", func);
-}
 
 app.post("/report", (req, res) => {
     addPostListener(req, res, (data) => {
         if(!checkData(res, data, ["grID", "id", "milli"]))
             return;
         data.grID = data.grID.toUpperCase();
+        
         if(data.time == null)
             logTime(data, new Date(), res);
         else
