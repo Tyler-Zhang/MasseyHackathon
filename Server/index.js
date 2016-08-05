@@ -35,41 +35,37 @@ app.get("/:page", function(req, res){
    res.sendFile(path.join(__dirname, "Website", req.params.page + ".html")); 
 });
 
-app.post("/createroom", (req, res) => {
-    onReq(req, res, (data) => {                                 // res will be in the scope of the function when it is run from within onReq
-        if(!checkData(res, data, ["type"]))
+addPostListener("createroom", (res, data) => {                                 // res will be in the scope of the function when it is run from within addPostListener
+    if(!checkData(res, data, ["type"]))
+        return;
+
+    data.type = data.type.toLowerCase();
+    var code = genChars(5), postObj, rtnObj;
+
+    if(data.type == "computer")
+    {
+        rtnObj = {grID:code};
+        postObj = {grID:code, usrAmt: 0};
+    }
+    else if(data.type =="android")
+    {
+        if(!checkData(res, data, ["name"]))
             return;
-
-        data.type = data.type.toLowerCase();
-        var code = genChars(5), postObj, rtnObj;
-
-        if(data.type == "computer")
-        {
-            rtnObj = {grID:code};
-            postObj = {grID:code, usrAmt: 0};
-        }
-        else if(data.type =="android")
-        {
-            if(!checkData(res, data, ["name"]))
-                return;
-            rtnObj = {grID:code, id: 0};
-            postObj = {grID:code, usrAmt: 1, users: {0: {name: data.name}}};
-        }        
-        db.insertOne(postObj).then( x => resp(res, SUC, rtnObj), x => resp(res, ERR, "Couldn't updated database"));
-    });
+        rtnObj = {grID:code, id: 0};
+        postObj = {grID:code, usrAmt: 1, users: {0: {name: data.name}}};
+    }        
+    db.insertOne(postObj).then( x => resp(res, SUC, rtnObj), x => resp(res, ERR, "Couldn't updated database"));
 });
 
-app.post("/joinroom", (req, res) => {
-    onReq(req, res, (data) => {
-        if(!checkData(res, data, ["grID", "name"]))
-            return;
-        data.grID = data.grID.toUpperCase();
+addPostListener("joinroom", (res, data) => {
+    if(!checkData(res, data, ["grID", "name"]))
+        return;
+    data.grID = data.grID.toUpperCase();
 
-        if(data.grID.match(/^\w{5}$/) == null)                  // Make sure that they sent id of group they want to join
-            resp(res, ERR, "INVALID grID");
-        else
-            addToRoom(data, res);
-    });
+    if(data.grID.match(/^\w{5}$/) == null)                  // Make sure that they sent id of group they want to join
+        return resp(res, ERR, "INVALID grID");
+    
+    //db.findOne({grID: data.grID}, {})
 });
 
 // Data takes rmID, id, and minutes
@@ -94,7 +90,7 @@ function addToRoom(data, res){
 }
 
 app.post("/report", (req, res) => {
-    onReq(req, res, (data) => {
+    addPostListener(req, res, (data) => {
         if(!checkData(res, data, ["grID", "id", "milli"]))
             return;
         data.grID = data.grID.toUpperCase();
@@ -167,7 +163,7 @@ function logTime(data, date, res){
 }
 // Includes start and end date
 app.post("/view", (req, res) => {
-    onReq(req, res, (data) => {
+    addPostListener(req, res, (data) => {
         if(!checkData(res, data, ["grID"]))
             return;
         
@@ -265,28 +261,30 @@ http.createServer(app).listen(80, function(){
 });
 
 // Network Functions
-function onReq(req, res, callBack)
+function addPostListener(URL, callBack)
 {
-    res.startTime = new Date();     // Log start time of the request
-    hitCounter++;                   // Log request count
+    app.post("/" + URL, (req, res) => {
+        res.startTime = new Date();     // Log start time of the request
+        hitCounter++;                   // Log request count
 
-    try{
-        var body="";
-        req.on("data",function(data){
-            body+=data;
-            //Check to see if someone is trying to crash the server
-            if(body.length >1e6)
-                request.connection.destroy();
-        });
+        try{
+            var body="";
+            req.on("data",function(data){
+                body+=data;
+                //Check to see if someone is trying to crash the server
+                if(body.length >1e6)
+                    request.connection.destroy();
+            });
 
-        req.on("end", () => {          
-            var data = JSON.parse(body);
-            totalNetworkRecieve += sizeOf(data);
-            callBack(data);
-        });
-    } catch(err) {
-        log(ERROR, err);
-    }
+            req.on("end", () => {          
+                var data = JSON.parse(body);
+                totalNetworkRecieve += sizeOf(data);
+                callBack(res, data);
+            });
+        } catch(err) {
+            log(ERROR, err);
+        }
+    });
 }
 
 var ERR = "ERROR";
@@ -307,7 +305,7 @@ function resp(res, type, body)
     var rtnObj_size = sizeOf(rtnObj);
     totalNetworkSend += rtnObj_size;
     log((type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
-    " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"]");
+    " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"ms]");
 }
 
 function checkData(res, data, args)
