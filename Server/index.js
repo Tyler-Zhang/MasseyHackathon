@@ -84,17 +84,13 @@ addPostListener("joinroom", (res, data) => {
          resp(res, ERR, e);});
 });
 
-app.post("/report", (req, res) => {
-    addPostListener(req, res, (data) => {
-        if(!checkData(res, data, ["grID", "id", "milli"]))
-            return;
-        data.grID = data.grID.toUpperCase();
-        
-        if(data.time == null)
-            logTime(data, new Date(), res);
-        else
-            logTime(data, new Date(data.time), res);
-    });
+addPostListener("report", (res, data) => {
+    if(!checkData(res, data, ["grID", "id", "milli"]))
+        return;
+    data.grID = data.grID.toUpperCase();
+    var date = data.date || new Date().getTime();
+
+    
 });
 
 function logTime(data, date, res){
@@ -154,9 +150,9 @@ function logTime(data, date, res){
         }
         return resp(res, SUC, "UPDATED TIME TABLES");
         });        
-    });
-    
+    }); 
 }
+
 // Includes start and end date
 app.post("/view", (req, res) => {
     addPostListener(req, res, (data) => {
