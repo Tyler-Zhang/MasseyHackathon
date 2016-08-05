@@ -40,25 +40,22 @@ app.post("/createroom", (req, res) => {
         if(!checkData(res, data, ["type"]))
             return;
 
-        var code = genChars(5);
         data.type = data.type.toLowerCase();
-        
+        var code = genChars(5), postObj, rtnObj;
+
         if(data.type == "computer")
-            db.insertOne({grID:code, usrAmt: 0}, (err, r) => {
-                if(err)
-                    resp(res, ERR, "Couldn't update database");
-                else
-                    resp(res, SUC, {grId: code});
-            });
-        else if(data.type == 'android')
-            db.insertOne({grID:code, usrAmt: 1, users: {0: {name: data.name}}}, (err, r) => {
-                    if(err)
-                        resp(res, ERR, "Couldn't update database");
-                    else
-                        resp(res, SUC, {grId: code, id: 0});
-                });
-        else
-            return resp(res, ERR, "Type must be {computer || android}");
+        {
+            rtnObj = {grID:code};
+            postObj = {grID:code, usrAmt: 0};
+        }
+        else if(data.type =="android")
+        {
+            if(!checkData(res, data, ["name"]))
+                return;
+            rtnObj = {grID:code, id: 0};
+            postObj = {grID:code, usrAmt: 1, users: {0: {name: data.name}}};
+        }        
+        db.insertOne(postObj).then( x => resp(res, SUC, rtnObj), x => resp(res, ERR, "Couldn't updated database"));
     });
 });
 
@@ -264,7 +261,7 @@ app.post("/debuginfo", (req, res) => {
 
 // Create web server
 http.createServer(app).listen(80, function(){
-    log(INFO, "The server has been opened on port 80 \r\n");
+    log(INFO, "The server has been opened on port 80");
 });
 
 // Network Functions
