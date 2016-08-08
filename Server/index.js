@@ -16,7 +16,7 @@ var totalRequestTime = 0;           // Stores the total amount of time it has ta
 var debugMode = true;
 
 // Database declaration and functions
-var db, col;
+var db, groupsColl, timesColl, logsColl;
 
 mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
     if(err)
@@ -26,7 +26,9 @@ mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
     } else {
         log(INFO, "Connected to the server")
         db = d;
-        col = d.collection("ScreenTime");
+        groupsColl  = d.collection("groups");
+        timesColl   = d.collection("times");
+        //logsColl    = d.collection("logs");
     }
 });
 // Web paths
@@ -36,26 +38,15 @@ app.get("/:page", function(req, res){
    res.sendFile(path.join(__dirname, "Website", req.params.page + ".html")); 
 });
 
-addPostListener("createroom", (res, data) => {                                 // res will be in the scope of the function when it is run from within addPostListener
+addPostListener("createroom", (res, data) => {
     if(!checkData(res, data, ["type"]))
         return;
 
     data.type = data.type.toLowerCase();
-    var code = genChars(5), postObj, rtnObj;
-
-    if(data.type == "computer")
-    {
-        rtnObj = {grID:code};
-        postObj = {grID:code, usrAmt: 0};
-    }
-    else if(data.type =="android")
-    {
-        if(!checkData(res, data, ["name"]))
-            return;
-        rtnObj = {grID:code, id: 0};
-        postObj = {grID:code, usrAmt: 1, users: {0: {name: data.name}}};
-    }        
-    col.insertOne(postObj).then( x => resp(res, SUC, rtnObj), x => resp(res, ERR, "Couldn't updated database"));
+    var code = genChars(5);
+    groupsColl.insertOne({grID:code, userAmt: 0, users:[]}).then( 
+        x => resp(res, SUC, {grID:code}),                           // Resolved
+        x => resp(res, ERR, "Couldn't updated database", true));          // Rejected
 });
 
 addPostListener("joinroom", (res, data) => {
@@ -66,22 +57,30 @@ addPostListener("joinroom", (res, data) => {
     if(data.grID.match(/^\w{5}$/) == null)                  // Make sure that they sent id of group they want to join
         return resp(res, ERR, "INVALID grID");
     
-    col.findOne({grID: data.grID}, {usrAmt:1})
+    groupsColl.findOne({grID: data.grID}, {userAmt:1})
     .then(d => {
         if(!d)
             throw "Object with grID [" + data.grID + "] not found";
-        var setObj = {};
-        setObj["users." + d.usrAmt] = {name: data.name};
-        return col.updateOne({_id:d._id}, {$set:setObj}, {upsert:true}).then(() => {return d});
+        return timesColl.insertOne({time:[]}).then(x => {
+            d.tId = x.insertedId;
+            return d;
+        });
     })
     .then(d => {
-        return col.updateOne({_id: d._id}, {$set: {usrAmt: d.usrAmt + 1}}).then(() => {return d.usrAmt});
+        var setObj = {
+            name: data.name,
+            times: d.tId
+        };
+        return groupsColl.updateOne({_id:d._id}, {$push:{users: setObj}}, {upsert:true}).then(() => {return d});
     })
     .then(d => {
-        resp(res, SUC, {grID: d + 1});
+        return groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => {return d.usrAmt});
+    })
+    .then(d => {
+        resp(res, SUC, {id: d});
     })
     .catch(e => {
-         resp(res, ERR, e);});
+         resp(res, ERR, e, true);});
 });
 
 addPostListener("report", (res, data) => {
@@ -90,7 +89,12 @@ addPostListener("report", (res, data) => {
     data.grID = data.grID.toUpperCase();
     var date = data.date || new Date().getTime();
 
-    
+    groupsColl.findOne({grID: data.grID})
+    .then(d => {
+        if(!d)
+            throw "Object with grID [" + data.grID + "] not found";
+        
+    })
 });
 
 function logTime(data, date, res){
@@ -258,7 +262,6 @@ function addPostListener(URL, callBack)
     app.post("/" + URL, (req, res) => {
         res.startTime = new Date();     // Log start time of the request
         hitCounter++;                   // Log request count
-
         try{
             var body="";
             req.on("data",function(data){
@@ -282,7 +285,7 @@ function addPostListener(URL, callBack)
 var ERR = "ERROR";
 var SUC = "SUCCESS";
 
-function resp(res, type, body)
+function resp(res, type, body, er)
 {
     var rtnObj = {
         type: type,
@@ -293,11 +296,11 @@ function resp(res, type, body)
         rtnObj.responseTime = requestTime;
     res.json(rtnObj);
     totalRequestTime += requestTime;
-
     var rtnObj_size = sizeOf(rtnObj);
     totalNetworkSend += rtnObj_size;
-    log((type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
-    " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"ms]");
+    if(log)
+        log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
+        " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"ms]");
 }
 
 function checkData(res, data, args)
