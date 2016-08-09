@@ -2,8 +2,7 @@ var urlDefinition ={
     "/createroom":{
         desc: "For creating a new room",
         attr: {
-            names: ["type", "name"],
-            req: [true, false]
+            
         }    
     },
     "/joinroom":{
