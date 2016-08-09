@@ -4,7 +4,7 @@ var path =      require("path");            // Joing paths
 var sizeOf =    require("object-sizeof");   // Checking object of a javascript object
 var fs =        require("fs");              // Reading and writing files
 var mongoCli =  require("mongodb")          // Connecting to the mongo Database
-.MongoClient; 
+.MongoClient;
 
 require("datejs");                          // Extension to Date() for better date handling
 
@@ -18,13 +18,14 @@ var debugMode = true;
 // Database declaration and functions
 var db, groupsColl, timesColl, logsColl;
 
+
 mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
     if(err)
     {
         log(ERROR, err);
         throw "Database didn't connect correctly";
     } else {
-        log(INFO, "Connected to the server")
+        log(INFO, "Connected to the mongo database on port 27017")
         db = d;
         groupsColl  = d.collection("groups");
         timesColl   = d.collection("times");
@@ -39,14 +40,10 @@ app.get("/:page", function(req, res){
 });
 
 addPostListener("createroom", (res, data) => {
-    if(!checkData(res, data, ["type"]))
-        return;
-
-    data.type = data.type.toLowerCase();
     var code = genChars(5);
     groupsColl.insertOne({grID:code, userAmt: 0, users:[]}).then( 
-        x => resp(res, SUC, {grID:code}),                           // Resolved
-        x => resp(res, ERR, "Couldn't updated database", true));          // Rejected
+        x => resp(res, SUC, {grID:code}),                               // Resolved
+        x => resp(res, ERR, "Couldn't updated database", true));        // Rejected
 });
 
 addPostListener("joinroom", (res, data) => {
@@ -60,8 +57,8 @@ addPostListener("joinroom", (res, data) => {
     groupsColl.findOne({grID: data.grID}, {userAmt:1})
     .then(d => {
         if(!d)
-            throw "Object with grID [" + data.grID + "] not found";
-        return timesColl.insertOne({time:[]}).then(x => {
+            throw {message:"Object with grID [" + data.grID + "] not found"};
+        return timesColl.insertOne({times:[]}).then(x => {
             d.tId = x.insertedId;
             return d;
         });
@@ -74,13 +71,14 @@ addPostListener("joinroom", (res, data) => {
         return groupsColl.updateOne({_id:d._id}, {$push:{users: setObj}}, {upsert:true}).then(() => {return d});
     })
     .then(d => {
-        return groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => {return d.usrAmt});
+        return groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => {return d.userAmt});
     })
     .then(d => {
         resp(res, SUC, {id: d});
     })
     .catch(e => {
-         resp(res, ERR, e, true);});
+         resp(res, ERR, e.message);
+    });
 });
 
 addPostListener("report", (res, data) => {
@@ -88,13 +86,27 @@ addPostListener("report", (res, data) => {
         return;
     data.grID = data.grID.toUpperCase();
     var date = data.date || new Date().getTime();
+    var length = Math.floor(data.milli/ 1000);
 
-    groupsColl.findOne({grID: data.grID})
+    var id = Number(data.id);
+    if(id == NaN)
+        return resp(res, ERR, "ID must be a number");
+
+    groupsColl.findOne({grID: data.grID}, {users: {$slice: [id, 1]}})
     .then(d => {
-        if(!d)
-            throw "Object with grID [" + data.grID + "] not found";
-        
+        if(!d.users[0])
+            throw {message:"Object with grID [" + data.grID + "] not found"};
+        return d.users[0].times;
     })
+    .then(d => {
+        return timesColl.updateOne({_id: d}, {$push:{times:{t: date, l: length}}});
+    })
+    .then(() => {
+        resp(res, SUC, "Time uploaded");
+    })
+    .catch(e => {
+        resp(res, ERR, e.message);
+    });
 });
 
 function logTime(data, date, res){
@@ -298,9 +310,9 @@ function resp(res, type, body, er)
     totalRequestTime += requestTime;
     var rtnObj_size = sizeOf(rtnObj);
     totalNetworkSend += rtnObj_size;
-    if(log)
-        log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
-        " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"ms]");
+    console.log(JSON.stringify(body));
+    log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
+    " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"ms]");
 }
 
 function checkData(res, data, args)
