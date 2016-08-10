@@ -149,6 +149,9 @@
             for(var x = 0; x < attrDef.children.length; x++)
                 attrDef.removeChild(attrDef.children[x--]);
             
+            if(!def.attr.names)
+                return;
+                
             for(var x = 0; x < def.attr.names.length; x++)
             {
                 var attrData = document.createElement("option");

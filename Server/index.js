@@ -77,7 +77,9 @@ addPostListener("joinroom", (res, data) => {
         resp(res, SUC, {id: d});
     })
     .catch(e => {
-         resp(res, ERR, e.message);
+        if(e.stack)
+            e.err = true;
+        resp(res, ERR, e.message, e.err);
     });
 });
 
@@ -85,7 +87,7 @@ addPostListener("report", (res, data) => {
     if(!checkData(res, data, ["grID", "id", "milli"]))
         return;
     data.grID = data.grID.toUpperCase();
-    var date = data.date || new Date().getTime();
+    var date = data.time || new Date().getTime();
     var length = Math.floor(data.milli/ 1000);
 
     var id = Number(data.id);
@@ -99,13 +101,16 @@ addPostListener("report", (res, data) => {
         return d.users[0].times;
     })
     .then(d => {
-        return timesColl.updateOne({_id: d}, {$push:{times:{t: date, l: length}}});
+        return timesColl.updateOne({_id: d}, {$push:{times:[date, length]}}).then(f => {
+            if(f.result.n == 0)
+                throw {message: "!!DD!! No time entry for user grID [" + data.grID+ " ]" + "id [" + data.id + "]" , err: true}
+        });
     })
     .then(() => {
         resp(res, SUC, "Time uploaded");
     })
     .catch(e => {
-        resp(res, ERR, e.message);
+        resp(res, ERR, e.message, e.err);
     });
 });
 
@@ -170,67 +175,19 @@ function logTime(data, date, res){
 }
 
 // Includes start and end date
-app.post("/view", (req, res) => {
-    addPostListener(req, res, (data) => {
-        if(!checkData(res, data, ["grID"]))
-            return;
-        
-        data.grID = data.grID.toUpperCase();
-        var newRef = ref.child(data.grID);
-
-        if(!!data.id)
-            newRef = newRef.child("/users/" + data.id);
-        
-        log(INFO, "Request data group ID: " + newRef);
-        newRef.once("value", (snapshot) => {
-            var obj = snapshot.val();
-            if(obj == null)
-                return resp(res, ERR, "Group [" + data.grID + "]Doesn't Exist");
-            
-            if(!data.startDate && !data.endDate)
-            {
-                obj.total = recurAdd(obj, 4);
-                return resp(res, SUC, obj);
-            }
-            if(!!data.startDate ^ !!data.endDate)
-                return resp(res, ERR, "Must of both or either startDate and endDate");
-
-            var start = data.startDate.split("/");
-            var end = data.endDate.split("/");
-
-            if(start.length != 2 || end.length != 2)
-                return resp(res, ERR, "Dates are formmated incorrectly. Should be Month/Day");
-
-            var rtnObj = {};
-            var firstMonth = {};
-
-            for(var day = start[1]; day <= ((start[0] == end[0])? end[1] : 31); day++)
-            {
-                if(!obj[start[0]] || !obj[start[0]][day])
-                    continue;
-                firstMonth[day] = obj[start[0]][day];
-            }
-            rtnObj[start[0]] = firstMonth;
-            for(var month = start[0] + 1; month < end[0]; month ++)
-            {
-                if(!obj[month])
-                    continue;
-                rtnObj[month] = obj[month];
-            }
-            if(start[1] != end[1])
-            {
-                var lastMonth = {};
-                for(var day = 1; day <= end[1]; day ++)
-                {
-                    if(!obj[end[0]] || !obj[end[0]][end[1]])
-                        continue;
-                    lastMonth[day] = obj[end[0]][end[1]];
-                }
-            }
-            rtnObj.total = recurAdd(rtnObj, 2);
-            resp(res, SUC, rtnObj);
-        });
-    });
+addPostListener("view", (res, data) => {
+    if(!checkData(res, data, ["grID"]))
+        return;
+    data.grID = data.grID.toUpperCase();
+    var 
+    if(data.all)
+    groupsColl.findOne({grID: data.grID}, {users: {$slice: [id, 1]}})
+    .then(d => {
+        if(!d.users[0])
+            throw {message:"Object with grID [" + data.grID + "] not found"};
+        return d.users[0].times;
+    })
+    
 });
 
 function recurAdd(obj, level)
