@@ -179,13 +179,16 @@ addPostListener("view", (res, data) => {
     if(!checkData(res, data, ["grID"]))
         return;
     data.grID = data.grID.toUpperCase();
-    var 
-    if(data.all)
-    groupsColl.findOne({grID: data.grID}, {users: {$slice: [id, 1]}})
+    var personQuery = {};
+
+    if(data.id)
+        personQuery = {users: {$slice: [data.id, 1]}}
+
+    groupsColl.findOne({grID: data.grID}, personQuery)
     .then(d => {
         if(!d.users[0])
             throw {message:"Object with grID [" + data.grID + "] not found"};
-        return d.users[0].times;
+        return d.users;
     })
     
 });
