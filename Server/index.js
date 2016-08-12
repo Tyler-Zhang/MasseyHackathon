@@ -98,10 +98,8 @@ addPostListener("report", (res, data) => {
     .then(d => {
         if(!d.users[0])
             throw {message:"Object with grID [" + data.grID + "] not found"};
-        return d.users[0].times;
-    })
-    .then(d => {
-        return timesColl.updateOne({_id: d}, {$push:{times:[date, length]}}).then(f => {
+
+        return timesColl.updateOne({_id: d.users[0].times}, {$push:{times:[date, length]}}).then(f => {
             if(f.result.n == 0)
                 throw {message: "!!DD!! No time entry for user grID [" + data.grID+ " ]" + "id [" + data.id + "]" , err: true}
         });
@@ -188,10 +186,29 @@ addPostListener("view", (res, data) => {
     .then(d => {
         if(!d.users[0])
             throw {message:"Object with grID [" + data.grID + "] not found"};
-        return d.users;
+        return recurGetUserData(res, d.users, []);
     })
-    
 });
+
+function recurGetUserData (res, users, data)
+{
+    if(users.length == 0)
+        return data;
+    
+    timesColl.aggregate([
+        {$match: {id_: users[0].times}},
+        {$project: {times:1}},
+        {$unwind: "$times"},
+        
+    ], (e,r) => {
+        if(e)
+            resp(res, ERR, e, true);
+        else
+            console.log(r);
+
+    });
+}
+
 
 function recurAdd(obj, level)
 {
