@@ -177,16 +177,30 @@ addPostListener("view", (res, data) => {
     if(!checkData(res, data, ["grID"]))
         return;
     data.grID = data.grID.toUpperCase();
-    var personQuery = {};
-
+    var personQuery = {$match: {}};
     if(data.id)
-        personQuery = {users: {$slice: [data.id, 1]}}
-
-    groupsColl.findOne({grID: data.grID}, personQuery)
-    .then(d => {
-        if(!d.users[0])
-            throw {message:"Object with grID [" + data.grID + "] not found"};
-        return recurGetUserData(res, d.users, []);
+        personQuery = {$match: {id: Number(data.id)}}
+    
+    var conditions = {};
+    if(data.minTime && Number(data.minTime) != NaN)
+        conditions.$gte = [{$arrayElemAt: ["$$idx", 0]}, Number(data.minTime)];
+    if(data.maxTime && Number(data.maxTime) != NaN)
+        conditions.$lte = [{$arrayElemAt: ["$$idx", 1]}, Number(data.minTime)];
+        
+    groupsColl.aggregate([
+        {$match: {grID: data.grID}},
+        {$unwind: {path: "$users", includeArrayIndex: "id"}},
+        personQuery,
+        {$lookup: {from: "times", localField: "users.times", foreignField: "_id", as: "screenTime"}},
+        {$project: {name: "$users.name", times: {$arrayElemAt: ["$screenTime", 0]}}},
+        {$project: {name: 1, times: {$filter: {
+            input: "$times.times",
+            as: "idx",
+            cond: conditions}}}}
+    ], (e, r) => {
+        if(e)
+            return resp(res, SUC, e.message, true);
+        resp(res, SUC, r);
     })
 });
 
@@ -199,7 +213,7 @@ function recurGetUserData (res, users, data)
         {$match: {id_: users[0].times}},
         {$project: {times:1}},
         {$unwind: "$times"},
-        
+
     ], (e,r) => {
         if(e)
             resp(res, ERR, e, true);
