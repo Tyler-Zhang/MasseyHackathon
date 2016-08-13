@@ -89,7 +89,6 @@ addPostListener("report", (res, data) => {
     data.grID = data.grID.toUpperCase();
     var date = data.time || new Date().getTime();
     var length = Math.floor(data.milli/ 1000);
-
     var id = Number(data.id);
     if(id == NaN)
         return resp(res, ERR, "ID must be a number");
@@ -112,6 +111,7 @@ addPostListener("report", (res, data) => {
     });
 });
 
+/*
 function logTime(data, date, res){
     var screenStop = date.getTime();
     var recMinutes = Math.round(data.milli/60000);
@@ -171,7 +171,7 @@ function logTime(data, date, res){
         });        
     }); 
 }
-
+*/
 // Includes start and end date
 addPostListener("view", (res, data) => {
     if(!checkData(res, data, ["grID"]))
@@ -181,11 +181,14 @@ addPostListener("view", (res, data) => {
     if(data.id)
         personQuery = {$match: {id: Number(data.id)}}
     
-    var conditions = {};
+    var conditions = {$and: []};
     if(data.minTime && Number(data.minTime) != NaN)
-        conditions.$gte = [{$arrayElemAt: ["$$idx", 0]}, Number(data.minTime)];
+    {
+        data.minTime = Number(data.minTime);
+        conditions.$and.push({$or:[{$gte:[{$arrayElemAt: ["$$idx", 0]}, data.minTime]}, {$gte: [{$sum: "$$idx"}, data.minTime]}]});
+    }
     if(data.maxTime && Number(data.maxTime) != NaN)
-        conditions.$lte = [{$arrayElemAt: ["$$idx", 1]}, Number(data.minTime)];
+        conditions.$and.push({$lte: [{$arrayElemAt: ["$$idx", 0]}, Number(data.maxTime)]});
         
     groupsColl.aggregate([
         {$match: {grID: data.grID}},
@@ -196,33 +199,14 @@ addPostListener("view", (res, data) => {
         {$project: {name: 1, times: {$filter: {
             input: "$times.times",
             as: "idx",
-            cond: conditions}}}}
+            cond: conditions}}}},
+        {$project: {name: 1, times: 1, total: {$sum: {$arrayElemAt: ["$times", 1]}}}}
     ], (e, r) => {
         if(e)
             return resp(res, SUC, e.message, true);
         resp(res, SUC, r);
-    })
-});
-
-function recurGetUserData (res, users, data)
-{
-    if(users.length == 0)
-        return data;
-    
-    timesColl.aggregate([
-        {$match: {id_: users[0].times}},
-        {$project: {times:1}},
-        {$unwind: "$times"},
-
-    ], (e,r) => {
-        if(e)
-            resp(res, ERR, e, true);
-        else
-            console.log(r);
-
     });
-}
-
+});
 
 function recurAdd(obj, level)
 {
