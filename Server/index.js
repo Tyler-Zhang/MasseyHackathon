@@ -210,16 +210,15 @@ addPostListener("view", (res, data) => {
         for(var x = 0; x < r.length; x++)
         {
             var c = r[x].times;
+            if(!c)
+                continue;
             c.sort((a,b) => {return (a[0] > b[0])? 1: (a[0] == b[0])? 0: -1});
             
             if(c[0][0] < data.minTime)
                 c[0] = [data.minTime, Math.floor((c[0][0] + c[0][1]*1000 - data.minTime)/1000)];
             if(c[c.length -1][0] + c[c.length -1][1]*1000 > data.maxTime)
                 c[c.length -1][1] = Math.floor(data.maxTime/1000);            
-            
-            if(c == r[x].times)
-                console.log(true);
-
+                
             var total = 0;
             for(var y = 0; y < c.length; y++)
                 total += c[y][1];
@@ -306,7 +305,7 @@ function resp(res, type, body, er)
     totalRequestTime += requestTime;
     var rtnObj_size = sizeOf(rtnObj);
     totalNetworkSend += rtnObj_size;
-    console.log(JSON.stringify(body));
+
     log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
     " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"ms]");
 }
@@ -333,7 +332,7 @@ function genChars(amt)
 }
 
 var INFO = 0, WARN = 1, ERROR = 2, strLevel = ["[INFO]", "[WARN]", "[EROR]"];
-var logLevel =   INFO;
+var logLevel =   WARN;
 var writeLevel = WARN;
 
 function log(level, message)
