@@ -196,10 +196,10 @@ addPostListener("view", (res, data) => {
     }    
     groupsColl.aggregate([
         {$match: {grID: data.grID}},
-        {$unwind: {path: "$users", includeArrayIndex: "id"}},
+        {$unwind: {path: "$users", preserveNullAndEmptyArrays: true}},
         personQuery,
         {$lookup: {from: "times", localField: "users.times", foreignField: "_id", as: "screenTime"}},
-        {$project: {name: "$users.name", times: {$arrayElemAt: ["$screenTime", 0]}}},
+        {$project: {_id: 0, name: "$users.name", times: {$arrayElemAt: ["$screenTime", 0]}}},
         {$project: {name: 1, times: {$filter: {
             input: "$times.times",
             as: "idx",
@@ -207,6 +207,13 @@ addPostListener("view", (res, data) => {
     ], (e, r) => {
         if(e)
             return resp(res, SUC, e.message, true);
+
+        if(r.length == 0)
+            return resp(res, ERR, "Couldn't find group with that ID");
+        
+        if(!r[0].name)
+            return resp(res, ERR, "No one has joined your goup yet.");
+
         for(var x = 0; x < r.length; x++)
         {
             var c = r[x].times;

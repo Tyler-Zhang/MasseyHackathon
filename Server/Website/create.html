@@ -89,7 +89,7 @@
     <!-- Custom Theme JavaScript -->
     <script src="js/grayscale.js"></script>
     <script type = "text/javascript">
-            document.onload = postRequest("/createroom", {type: "computer"}, (obj) => {
+            document.onload = postRequest("/createroom", {}, (obj) => {
                 console.log(obj);
 			    if(obj.type === "SUCCESS")
 				    updateClient(obj);

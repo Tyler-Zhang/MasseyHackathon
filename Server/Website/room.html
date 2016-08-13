@@ -71,7 +71,7 @@
         postRequest("/view", {grID: room}, (obj) => {
             if(obj.type == "ERROR")
                 displayError(obj.body);
-            else if(obj.body.userAmt == 0)
+            else if(!obj.body || obj.body.userAmt == 0)
                 displayError("There are no people added to your group yet");
             else {
                 makeCharts(obj);
