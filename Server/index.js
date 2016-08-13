@@ -88,7 +88,9 @@ addPostListener("report", (res, data) => {
         return;
     data.grID = data.grID.toUpperCase();
     var date = data.time || new Date().getTime();
-    var length = Math.floor(data.milli/ 1000);
+    var length = Math.floor(data.milli/1000);
+    if(length  == 0)
+        return resp(res, SUC, "Not logging any time less than 1 second");
     var id = Number(data.id);
     if(id == NaN)
         return resp(res, ERR, "ID must be a number");
@@ -188,8 +190,10 @@ addPostListener("view", (res, data) => {
         conditions.$and.push({$or:[{$gte:[{$arrayElemAt: ["$$idx", 0]}, data.minTime]}, {$gte: [{$sum: "$$idx"}, data.minTime]}]});
     }
     if(data.maxTime && Number(data.maxTime) != NaN)
-        conditions.$and.push({$lte: [{$arrayElemAt: ["$$idx", 0]}, Number(data.maxTime)]});
-        
+    {
+        data.maxTime = Number(data.maxTime);
+        conditions.$and.push({$lte: [{$arrayElemAt: ["$$idx", 0]}, data.maxTime]});
+    }    
     groupsColl.aggregate([
         {$match: {grID: data.grID}},
         {$unwind: {path: "$users", includeArrayIndex: "id"}},
@@ -199,11 +203,28 @@ addPostListener("view", (res, data) => {
         {$project: {name: 1, times: {$filter: {
             input: "$times.times",
             as: "idx",
-            cond: conditions}}}},
-        {$project: {name: 1, times: 1, total: {$sum: {$arrayElemAt: ["$times", 1]}}}}
+            cond: conditions}}}}
     ], (e, r) => {
         if(e)
             return resp(res, SUC, e.message, true);
+        for(var x = 0; x < r.length; x++)
+        {
+            var c = r[x].times;
+            c.sort((a,b) => {return (a[0] > b[0])? 1: (a[0] == b[0])? 0: -1});
+            
+            if(c[0][0] < data.minTime)
+                c[0] = [data.minTime, Math.floor((c[0][0] + c[0][1]*1000 - data.minTime)/1000)];
+            if(c[c.length -1][0] + c[c.length -1][1]*1000 > data.maxTime)
+                c[c.length -1][1] = Math.floor(data.maxTime/1000);            
+            
+            if(c == r[x].times)
+                console.log(true);
+
+            var total = 0;
+            for(var y = 0; y < c.length; y++)
+                total += c[y][1];
+            r[x].total = total;
+        }
         resp(res, SUC, r);
     });
 });
