@@ -34,10 +34,21 @@ mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
 });
 // Web paths
 var app = express();
-app.use(express.static(path.join(__dirname, "Website")));
+
+
+app.get("/room", getRoom);
+app.get("/room.html", getRoom);
+
+function getRoom(req, res) {
+    var grID = req.query.grID;
+    console.log(grID);
+}
+
 app.get("/:page", function(req, res){
-   res.sendFile(path.join(__dirname, "Website", req.params.page + ".html")); 
+    res.sendFile(path.join(__dirname, "Website", req.params.page)); 
 });
+
+app.use(express.static(path.join(__dirname, "Website")));
 
 addPostListener("createroom", (res, data) => {
     var code = genChars(5);
