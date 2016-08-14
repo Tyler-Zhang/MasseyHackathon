@@ -33,12 +33,9 @@ mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
         //logsColl    = d.collection("logs");
     }
 });
-// Web paths
+// Default express directory
 var app = express();
-app.use(express.static(path.join(__dirname, "Website")));
-
-app.get("/room", getRoom);
-app.get("/room.html", getRoom);
+app.use(express.static(path.join(__dirname, "Website", "public")));
 
 // Load room template
 var roomTemplate;
@@ -57,8 +54,11 @@ function getRoom(req, res) {
     res.end(roomTemplate(data));
 }
 
+app.get("/room", getRoom);
+app.get("/room.html", getRoom);
+
 app.get("/:page", function(req, res){
-    res.sendFile(path.join(__dirname, "Website", req.params.page)); 
+    res.sendFile(path.join(__dirname, "Website","public", req.params.page)); 
 });
 
 
