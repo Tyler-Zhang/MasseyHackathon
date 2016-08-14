@@ -3,6 +3,7 @@ var express =   require("express");         // Handling get/post requests
 var path =      require("path");            // Joing paths
 var sizeOf =    require("object-sizeof");   // Checking object of a javascript object
 var fs =        require("fs");              // Reading and writing files
+var dot =       require("dot");
 var mongoCli =  require("mongodb")          // Connecting to the mongo Database
 .MongoClient;
 
@@ -12,7 +13,7 @@ require("datejs");                          // Extension to Date() for better da
 var totalNetworkSend = 0;       // Stores the total output in size of kb
 var totalNetworkRecieve = 0;    // Stores the total input in size of kb
 var hitCounter = 0;             // Stores how many times the server has been hit
-var totalRequestTime = 0;           // Stores the total amount of time it has taken for the server to resolve the request
+var totalRequestTime = 0;       // Stores the total amount of time it has taken for the server to resolve the request
 var debugMode = true;
 
 // Database declaration and functions
@@ -34,27 +35,38 @@ mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
 });
 // Web paths
 var app = express();
-
+app.use(express.static(path.join(__dirname, "Website")));
 
 app.get("/room", getRoom);
 app.get("/room.html", getRoom);
 
+// Load room template
+var roomTemplate;
+
+fs.readFile(path.join(__dirname, "Website", "room.html"), "utf8", (e, d) => {
+    if(e)
+    {
+        log(ERROR, e.message);
+        throw e.message;
+    }
+    roomTemplate = dot.template(d);
+});
+
 function getRoom(req, res) {
-    var grID = req.query.grID;
-    console.log(grID);
+    var data = {grID:req.query.grID};
+    res.end(roomTemplate(data));
 }
 
 app.get("/:page", function(req, res){
     res.sendFile(path.join(__dirname, "Website", req.params.page)); 
 });
 
-app.use(express.static(path.join(__dirname, "Website")));
 
 addPostListener("createroom", (res, data) => {
     var code = genChars(5);
     groupsColl.insertOne({grID:code, userAmt: 0, users:[]}).then( 
         x => resp(res, SUC, {grID:code}),                               // Resolved
-        x => resp(res, ERR, "Couldn't updated database", true));        // Rejected
+        x => resp(res, ERR, "Couldn't update database", true));        // Rejected
 });
 
 addPostListener("joinroom", (res, data) => {
@@ -232,9 +244,9 @@ addPostListener("view", (res, data) => {
                 continue;
             c.sort((a,b) => {return (a[0] > b[0])? 1: (a[0] == b[0])? 0: -1});
             
-            if(c[0][0] < data.minTime)
+            if(data.minTime && c[0][0] < data.minTime)
                 c[0] = [data.minTime, Math.floor((c[0][0] + c[0][1]*1000 - data.minTime)/1000)];
-            if(c[c.length -1][0] + c[c.length -1][1]*1000 > data.maxTime)
+            if(data.maxTime && c[c.length -1][0] + c[c.length -1][1]*1000 > data.maxTime)
                 c[c.length -1][1] = Math.floor(data.maxTime/1000);            
                 
             var total = 0;

@@ -8,13 +8,10 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title> ScreenOff </title>
+    <title> {{=it.grID}} Stats </title>
     
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
-    <link href="css/grayscale.css" rel="stylesheet">
 
     <!-- Custom Fonts -->
     <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
@@ -29,8 +26,8 @@
     <![endif]-->
 </head>
 <body class="container-fluid">
-    <div class="row">
-        <h1 id="heading" class="text-center" style="margin-top: 50px; margin-bottom:50px; font-weight:bold; font-size:62px; color:white"></h1>
+    <div class="row" style="background-color:">
+        <h1 id="heading" class="text-center" style="margin-top: 50px; margin-bottom:50px; font-weight:bold; font-size:62px; color:white">{{=it.grID}}</h1>
     </div>
     <div class="row">
         <div class="col-md-10 col-md-offset-1 bg-info">
@@ -58,17 +55,7 @@
     <script>
     function init(){
         console.log(document.getElementById("totalDayChart").getContext("2d").canvas.height);
-        var arr = document.URL.match(/grID=(.*)/);
-        if(arr == null || !arr.hasOwnProperty("1"))
-        {
-            displayError("URL formatted wrong");
-            return;
-        }
-        var room = arr[1];
-        console.log("Making request with " + room);
-        setInner("heading", "Usage for room " + room);
-        
-        postRequest("/view", {grID: room}, (obj) => {
+        postRequest("/view", {grID: "{{=it.grID}}"}, (obj) => {
             if(obj.type == "ERROR")
                 displayError(obj.body);
             else if(!obj.body || obj.body.userAmt == 0)

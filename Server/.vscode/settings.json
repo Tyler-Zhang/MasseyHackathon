@@ -1,0 +1,17 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/.idea":true,
+        "**/data":true,
+        "**/node_modules":true,
+        "**/*.json":true,
+        "**/Website/css":true,
+        "**/Website/f*":true,
+        "**/Website/img":true,
+        "**/Website/*ss":true,
+        "**/Website/src":true
+    }
+}
