@@ -7,11 +7,11 @@
         "**/.idea":true,
         "**/data":true,
         "**/node_modules":true,
-        "**/*.json":true,
-        "**/Website/css":true,
-        "**/Website/f*":true,
-        "**/Website/img":true,
-        "**/Website/*ss":true,
-        "**/Website/src":true
+        "*.json":true,
+        "**/Website/public/css":true,
+        "**/Website/public/f*":true,
+        "**/Website/public/img":true,
+        "**/Website/public/*ss":true,
+        "**/Website/public/src":true
     }
 }

@@ -193,7 +193,11 @@
 
             redrawTable();
         }
-
+        function removeAttr(key)
+        {
+            delete obj[key];
+            redrawTable();
+        }
         function redrawTable()
         {
             var tbody = document.getElementById("json-table").getElementsByTagName("tbody")[0];

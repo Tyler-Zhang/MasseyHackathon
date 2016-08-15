@@ -49,6 +49,7 @@ fs.readFile(path.join(__dirname, "Website", "room.html"), "utf8", (e, d) => {
     roomTemplate = dot.template(d);
 });
 
+// Apply template
 function getRoom(req, res) {
     var data = {grID:req.query.grID};
     res.end(roomTemplate(data));
@@ -91,10 +92,10 @@ addPostListener("joinroom", (res, data) => {
             name: data.name,
             times: d.tId
         };
-        return groupsColl.updateOne({_id:d._id}, {$push:{users: setObj}}, {upsert:true}).then(() => {return d});
+        return groupsColl.updateOne({_id:d._id}, {$push:{users: setObj}}, {upsert:true}).then(() => d);
     })
     .then(d => {
-        return groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => {return d.userAmt});
+        return groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => d.userAmt);
     })
     .then(d => {
         resp(res, SUC, {id: d});
@@ -128,12 +129,8 @@ addPostListener("report", (res, data) => {
                 throw {message: "!!DD!! No time entry for user grID [" + data.grID+ " ]" + "id [" + data.id + "]" , err: true}
         });
     })
-    .then(() => {
-        resp(res, SUC, "Time uploaded");
-    })
-    .catch(e => {
-        resp(res, ERR, e.message, e.err);
-    });
+    .then(() => resp(res, SUC, "Time uploaded"))
+    .catch(e => resp(res, ERR, e.message, e.err));
 });
 
 /*
