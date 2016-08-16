@@ -1,3 +1,4 @@
+require('look').start();                    // Online performance viewing. go to ipaddress:5959
 var http =      require("http");            // Launching the HTML server
 var express =   require("express");         // Handling get/post requests
 var path =      require("path");            // Joing paths
@@ -61,7 +62,7 @@ function getRoom(req, res) {
 app.get("/room", getRoom);
 app.get("/room.html", getRoom);
 app.get("/:page", function(req, res){
-    res.sendFile(path.join(__dirname, "Website","public", req.params.page)); 
+    res.sendFile(path.join(__dirname, "Website","public", req.params.page + ".html")); 
 });
 
 addPostListener("createroom", (res, data) => {
@@ -116,7 +117,7 @@ addPostListener("report", (res, data) => {
         return timesColl.updateOne({_id: d.users[0].times}, {$push:{times:[date, length]}}).then((f) => {
             if(f.result.n == 0)
             {
-                var err = new Error("!!DD!! No time entry for user grID [" + data.grID+ " ] id [" + data.id + "]");
+                var err = new Error("!!DD!! No time entry for user grID [" + data.grID + " ] id [" + data.id + "]");
                 res.log.error(err);
                 throw err;
             }
@@ -250,16 +251,6 @@ addPostListener("view", (res, data) => {
     });
 });
 
-app.post("/debuginfo", (req, res) => {
-    res.json({
-        totalNetworkSend: totalNetworkSend,
-        totalNetworkRecieve: totalNetworkRecieve,
-        hitCounter: hitCounter,
-        totalRequestTime: totalRequestTime,
-        avgRequestTime: totalRequestTime / hitCounter
-    })
-});
-
 // Create web server
 http.createServer(app).listen(80, function(){
     log.info("The server has been opened on port 80");
@@ -308,7 +299,7 @@ function resp(res, type, body)
     var rtnObjSize = sizeOf(rtnObj);
     totalNetworkSend += rtnObjSize;
 
-    res.log.debug({type: type, body: body, time: requestTime, size: rtnObjSize});
+    res.log.trace({type: type, body: body, time: requestTime, size: rtnObjSize});
     //log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
     //" [Size: " + rtnObjSize + "] [RequestTime:"+ requestTime +"ms]");
 }
