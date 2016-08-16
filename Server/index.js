@@ -17,17 +17,16 @@ var totalRequestTime = 0;       // Stores the total amount of time it has taken 
 var debugMode = true;
 
 // Database declaration and functions
-var db, groupsColl, timesColl, logsColl;
+var groupsColl, timesColl /*,logsColl*/;
 
 
 mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
     if(err)
     {
-        log(ERROR, err);
-        throw "Database didn't connect correctly";
+        log(ERROR, err.message);
+        throw err;
     } else {
         log(INFO, "Connected to the mongo database on port 27017")
-        db = d;
         groupsColl  = d.collection("groups");
         timesColl   = d.collection("times");
         //logsColl    = d.collection("logs");
@@ -66,8 +65,8 @@ app.get("/:page", function(req, res){
 addPostListener("createroom", (res, data) => {
     var code = genChars(5);
     groupsColl.insertOne({grID:code, userAmt: 0, users:[]}).then( 
-        x => resp(res, SUC, {grID:code}),                               // Resolved
-        x => resp(res, ERR, "Couldn't update database", true));        // Rejected
+        () => resp(res, SUC, {grID:code}),                               // Resolved
+        () => resp(res, ERR, "Couldn't update database", true));        // Rejected
 });
 
 addPostListener("joinroom", (res, data) => {
@@ -79,28 +78,24 @@ addPostListener("joinroom", (res, data) => {
         return resp(res, ERR, "INVALID grID");
     
     groupsColl.findOne({grID: data.grID}, {userAmt:1})
-    .then(d => {
+    .then((d) => {
         if(!d)
-            throw {message:"Object with grID [" + data.grID + "] not found"};
-        return timesColl.insertOne({times:[]}).then(x => {
+            throw new Error("Object with grID [" + data.grID + "] not found");
+        return timesColl.insertOne({times:[]}).then((x) => {
             d.tId = x.insertedId;
             return d;
         });
     })
-    .then(d => {
+    .then((d) => {
         var setObj = {
             name: data.name,
             times: d.tId
         };
         return groupsColl.updateOne({_id:d._id}, {$push:{users: setObj}}, {upsert:true}).then(() => d);
     })
-    .then(d => {
-        return groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => d.userAmt);
-    })
-    .then(d => {
-        resp(res, SUC, {id: d});
-    })
-    .catch(e => {
+    .then((d) => groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => d.userAmt))
+    .then((d) => resp(res, SUC, {id: d}))
+    .catch((e) => {
         if(e.stack)
             e.err = true;
         resp(res, ERR, e.message, e.err);
@@ -116,21 +111,21 @@ addPostListener("report", (res, data) => {
     if(length  == 0)
         return resp(res, SUC, "Not logging any time less than 1 second");
     var id = Number(data.id);
-    if(id == NaN)
+    if(isNaN(id))
         return resp(res, ERR, "ID must be a number");
 
     groupsColl.findOne({grID: data.grID}, {users: {$slice: [id, 1]}})
-    .then(d => {
+    .then((d) => {
         if(!d.users[0])
-            throw {message:"Object with grID [" + data.grID + "] not found"};
+            throw new Error("Object with grID [" + data.grID + "] not found");
 
-        return timesColl.updateOne({_id: d.users[0].times}, {$push:{times:[date, length]}}).then(f => {
+        return timesColl.updateOne({_id: d.users[0].times}, {$push:{times:[date, length]}}).then((f) => {
             if(f.result.n == 0)
-                throw {message: "!!DD!! No time entry for user grID [" + data.grID+ " ]" + "id [" + data.id + "]" , err: true}
+                throw {message: "!!DD!! No time entry for user grID [" + data.grID+ " ] id [" + data.id + "]" , err: true}
         });
     })
     .then(() => resp(res, SUC, "Time uploaded"))
-    .catch(e => resp(res, ERR, e.message, e.err));
+    .catch((e) => resp(res, ERR, e.message, e.err));
 });
 
 /*
@@ -204,12 +199,12 @@ addPostListener("view", (res, data) => {
         personQuery = {$match: {id: Number(data.id)}}
     
     var conditions = {$and: []};
-    if(data.minTime && Number(data.minTime) != NaN)
+    if(data.minTime && !isNaN(Number(data.minTime)))
     {
         data.minTime = Number(data.minTime);
         conditions.$and.push({$or:[{$gte:[{$arrayElemAt: ["$$idx", 0]}, data.minTime]}, {$gte: [{$sum: "$$idx"}, data.minTime]}]});
     }
-    if(data.maxTime && Number(data.maxTime) != NaN)
+    if(data.maxTime && !isNaN(Number(data.maxTime)))
     {
         data.maxTime = Number(data.maxTime);
         conditions.$and.push({$lte: [{$arrayElemAt: ["$$idx", 0]}, data.maxTime]});
@@ -239,7 +234,7 @@ addPostListener("view", (res, data) => {
             var c = r[x].times;
             if(!c)
                 continue;
-            c.sort((a,b) => {return (a[0] > b[0])? 1: (a[0] == b[0])? 0: -1});
+            c.sort((a,b) => ((a[0] > b[0])? 1: (a[0] == b[0])? 0: -1));
             
             if(data.minTime && c[0][0] < data.minTime)
                 c[0] = [data.minTime, Math.floor((c[0][0] + c[0][1]*1000 - data.minTime)/1000)];
@@ -254,26 +249,6 @@ addPostListener("view", (res, data) => {
         resp(res, SUC, r);
     });
 });
-
-function recurAdd(obj, level)
-{
-    if(typeof(obj) != "object")
-        return 0;
-    var keys = Object.keys(obj);
-    if(keys.length == 0)
-        return 0;
-        
-    var total = 0;
-
-    if(level == 0)
-        for(var x = 0; x < keys.length; x++)
-            total += obj[keys[x]];
-    else 
-        for(var x = 0; x < keys.length; x++)
-            total += recurAdd(obj[keys[x]], level-1);
-    
-    return total;
-}
 
 app.post("/debuginfo", (req, res) => {
     res.json({
@@ -302,7 +277,7 @@ function addPostListener(URL, callBack)
                 body+=data;
                 //Check to see if someone is trying to crash the server
                 if(body.length >1e6)
-                    request.connection.destroy();
+                    req.connection.destroy();
             });
 
             req.on("end", () => {          
@@ -330,11 +305,11 @@ function resp(res, type, body, er)
         rtnObj.responseTime = requestTime;
     res.json(rtnObj);
     totalRequestTime += requestTime;
-    var rtnObj_size = sizeOf(rtnObj);
-    totalNetworkSend += rtnObj_size;
+    var rtnObjSize = sizeOf(rtnObj);
+    totalNetworkSend += rtnObjSize;
 
     log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
-    " [Size: " + rtnObj_size + "]" + "[RequestTime:"+ requestTime +"ms]");
+    " [Size: " + rtnObjSize + "] [RequestTime:"+ requestTime +"ms]");
 }
 
 function checkData(res, data, args)
