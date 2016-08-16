@@ -3,10 +3,16 @@ var express =   require("express");         // Handling get/post requests
 var path =      require("path");            // Joing paths
 var sizeOf =    require("object-sizeof");   // Checking object of a javascript object
 var fs =        require("fs");              // Reading and writing files
-var dot =       require("dot");
+var dot =       require("dot");             // Superfast HTML templating engine
 var mongoCli =  require("mongodb")          // Connecting to the mongo Database
 .MongoClient;
-
+var log =       require("bunyan")           // Logging library
+.createLogger({
+    name: "ScreenOff",
+    streams: [
+        {level: "debug", stream: process.stdout},
+        {level: "warn", path: "logs.log"}
+    ]});
 require("datejs");                          // Extension to Date() for better date handling
 
 // Usage Variables
@@ -17,19 +23,17 @@ var totalRequestTime = 0;       // Stores the total amount of time it has taken 
 var debugMode = true;
 
 // Database declaration and functions
-var groupsColl, timesColl /*,logsColl*/;
-
+var groupsColl, timesColl;
 
 mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
     if(err)
     {
-        log(ERROR, err.message);
+        log.fatal(err);
         throw err;
     } else {
-        log(INFO, "Connected to the mongo database on port 27017")
+        log.info("Connected to the mongo database on port 27017")
         groupsColl  = d.collection("groups");
         timesColl   = d.collection("times");
-        //logsColl    = d.collection("logs");
     }
 });
 // Default express directory
@@ -39,11 +43,11 @@ app.use(express.static(path.join(__dirname, "Website", "public")));
 // Load room template
 var roomTemplate;
 
-fs.readFile(path.join(__dirname, "Website", "room.html"), "utf8", (e, d) => {
-    if(e)
+fs.readFile(path.join(__dirname, "Website", "room.html"), "utf8", (err, d) => {
+    if(err)
     {
-        log(ERROR, e.message);
-        throw e.message;
+        log.fatal(err);
+        throw err;
     }
     roomTemplate = dot.template(d);
 });
@@ -56,11 +60,9 @@ function getRoom(req, res) {
 
 app.get("/room", getRoom);
 app.get("/room.html", getRoom);
-
 app.get("/:page", function(req, res){
     res.sendFile(path.join(__dirname, "Website","public", req.params.page)); 
 });
-
 
 addPostListener("createroom", (res, data) => {
     var code = genChars(5);
@@ -73,33 +75,25 @@ addPostListener("joinroom", (res, data) => {
     if(!checkData(res, data, ["grID", "name"]))
         return;
     data.grID = data.grID.toUpperCase();
-
     if(data.grID.match(/^\w{5}$/) == null)                  // Make sure that they sent id of group they want to join
         return resp(res, ERR, "INVALID grID");
     
     groupsColl.findOne({grID: data.grID}, {userAmt:1})
     .then((d) => {
         if(!d)
-            throw new Error("Object with grID [" + data.grID + "] not found");
+            throw resp(res, ERR, "Object with grID [" + data.grID + "] not found");
         return timesColl.insertOne({times:[]}).then((x) => {
             d.tId = x.insertedId;
             return d;
         });
     })
     .then((d) => {
-        var setObj = {
-            name: data.name,
-            times: d.tId
-        };
+        var setObj = {name: data.name, times: d.tId};
         return groupsColl.updateOne({_id:d._id}, {$push:{users: setObj}}, {upsert:true}).then(() => d);
     })
-    .then((d) => groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => d.userAmt))
-    .then((d) => resp(res, SUC, {id: d}))
-    .catch((e) => {
-        if(e.stack)
-            e.err = true;
-        resp(res, ERR, e.message, e.err);
-    });
+    .then((d) =>  groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => d.userAmt))
+    .then((d) =>  resp(res, SUC, {id: d}))
+    .catch((e) => {if(e) res.log.error(e)});
 });
 
 addPostListener("report", (res, data) => {
@@ -121,11 +115,15 @@ addPostListener("report", (res, data) => {
 
         return timesColl.updateOne({_id: d.users[0].times}, {$push:{times:[date, length]}}).then((f) => {
             if(f.result.n == 0)
-                throw {message: "!!DD!! No time entry for user grID [" + data.grID+ " ] id [" + data.id + "]" , err: true}
+            {
+                var err = new Error("!!DD!! No time entry for user grID [" + data.grID+ " ] id [" + data.id + "]");
+                res.log.error(err);
+                throw err;
+            }
         });
     })
     .then(() => resp(res, SUC, "Time uploaded"))
-    .catch((e) => resp(res, ERR, e.message, e.err));
+    .catch((e) => resp(res, ERR, e.message));
 });
 
 /*
@@ -221,8 +219,10 @@ addPostListener("view", (res, data) => {
             cond: conditions}}}}
     ], (e, r) => {
         if(e)
-            return resp(res, SUC, e.message, true);
-
+        {
+            res.log.error(e);
+            return resp(res, SUC, e.message);
+        }
         if(r.length == 0)
             return resp(res, ERR, "Couldn't find group with that ID");
         
@@ -234,7 +234,7 @@ addPostListener("view", (res, data) => {
             var c = r[x].times;
             if(!c)
                 continue;
-            c.sort((a,b) => ((a[0] > b[0])? 1: (a[0] == b[0])? 0: -1));
+            c.sort((a,b) => (a[0] > b[0])? 1: (a[0] == b[0])? 0: -1);
             
             if(data.minTime && c[0][0] < data.minTime)
                 c[0] = [data.minTime, Math.floor((c[0][0] + c[0][1]*1000 - data.minTime)/1000)];
@@ -262,7 +262,7 @@ app.post("/debuginfo", (req, res) => {
 
 // Create web server
 http.createServer(app).listen(80, function(){
-    log(INFO, "The server has been opened on port 80");
+    log.info("The server has been opened on port 80");
 });
 
 // Network Functions
@@ -280,21 +280,21 @@ function addPostListener(URL, callBack)
                     req.connection.destroy();
             });
 
-            req.on("end", () => {          
+            req.on("end", () => {
                 var data = JSON.parse(body);
                 totalNetworkRecieve += sizeOf(data);
+                res.log = log.child({url: URL, data:data});
                 callBack(res, data);
             });
         } catch(err) {
-            log(ERROR, err);
+            log.error(err);
         }
     });
 }
 
 var ERR = "ERROR";
 var SUC = "SUCCESS";
-
-function resp(res, type, body, er)
+function resp(res, type, body)
 {
     var rtnObj = {
         type: type,
@@ -308,8 +308,9 @@ function resp(res, type, body, er)
     var rtnObjSize = sizeOf(rtnObj);
     totalNetworkSend += rtnObjSize;
 
-    log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
-    " [Size: " + rtnObjSize + "] [RequestTime:"+ requestTime +"ms]");
+    res.log.debug({type: type, body: body, time: requestTime, size: rtnObjSize});
+    //log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
+    //" [Size: " + rtnObjSize + "] [RequestTime:"+ requestTime +"ms]");
 }
 
 function checkData(res, data, args)
@@ -331,23 +332,4 @@ function genChars(amt)
     for(var x = 0; x < amt; x++)
         str += Alpha.charAt(Math.random()*36);
     return str;
-}
-
-var INFO = 0, WARN = 1, ERROR = 2, strLevel = ["[INFO]", "[WARN]", "[EROR]"];
-var logLevel =   WARN;
-var writeLevel = WARN;
-
-function log(level, message)
-{
-    if(level >= logLevel || level >= writeLevel)
-    {
-        var d = new Date();
-        var time = d.toLocaleDateString() + " " + d.toLocaleTimeString();
-        var str = strLevel[level] + " " + time + "> " + message;
-
-        if(level >= logLevel)
-            console.log(str);
-        if(level >= writeLevel)
-            fs.appendFile('logs.txt', str + "\r\n" , () => {});
-    }
 }

@@ -4,6 +4,7 @@
   "description": "Backend for the screenoff ecosystem",
   "main": "index.js",
   "dependencies": {
+    "bunyan": "^1.8.1",
     "chart.js": "^2.1.6",
     "datejs": "^1.0.0-rc3",
     "dot": "^1.0.3",
