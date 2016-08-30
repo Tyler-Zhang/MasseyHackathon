@@ -1,1 +1,2 @@
-node index.js | bunyan
+node index.js | node_modules\.bin\bunyan
+pause
