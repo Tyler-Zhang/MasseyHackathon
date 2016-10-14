@@ -6,7 +6,9 @@ function postRequest(url, data, callback){
 	request.send(JSON.stringify(data));
 	request.onreadystatechange = function(){
 		if(request.readyState ==4){
-			var obj = JSON.parse(request.responseText);
+
+			var obj = JSON.parse(request.responseText.toString());
+			console.log(obj);
 			callback(obj);
 		}
 	}
@@ -22,7 +24,7 @@ function genArray(i, tot, val) {
 		rtnArr[i] = val;
 		return rtnArr
 	}
-	
+
 function getVal(id)
 {
 	return document.getElementById(id).value;

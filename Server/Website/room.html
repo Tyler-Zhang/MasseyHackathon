@@ -9,7 +9,7 @@
     <meta name="author" content="">
 
     <title> {{=it.grID}} Stats </title>
-    
+
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
 
@@ -55,7 +55,7 @@
     <script src="js/postReqDef.js"></script>
     <!-- jQuery -->
     <script src="js/jquery.js"></script>
-    
+
     <!-- Bootstrap Core JavaScript -->
     <script src="js/bootstrap.min.js"></script>
 
@@ -65,10 +65,12 @@
     <script src="js/room.js"></script>
     <script src="js/chart.js"></script>
     <script>
+    var fidelity = {{=it.fidelity}};
     function init(){
         setInner("status", "Getting Data");
-        
+
         postRequest("/view", {grID: "{{=it.grID}}"}, (obj) => {
+
             setInner("status", "Data recieved");
             if(obj.type == "ERROR")
                 displayError(obj.body);

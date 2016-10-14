@@ -1,4 +1,3 @@
-require('look').start();                    // Online performance viewing. go to ipaddress:5959
 var http =      require("http");            // Launching the HTML server
 var express =   require("express");         // Handling get/post requests
 var path =      require("path");            // Joing paths
@@ -22,6 +21,7 @@ var totalNetworkRecieve = 0;    // Stores the total input in size of kb
 var hitCounter = 0;             // Stores how many times the server has been hit
 var totalRequestTime = 0;       // Stores the total amount of time it has taken for the server to resolve the request
 var debugMode = true;
+var fidelity = 4;
 
 // Database declaration and functions
 var groupsColl, timesColl;
@@ -55,19 +55,19 @@ fs.readFile(path.join(__dirname, "Website", "room.html"), "utf8", (err, d) => {
 
 // Apply template
 function getRoom(req, res) {
-    var data = {grID:req.query.grID};
+    var data = {grID:req.query.grID, fidelity};
     res.end(roomTemplate(data));
 }
 
 app.get("/room", getRoom);
 app.get("/room.html", getRoom);
 app.get("/:page", function(req, res){
-    res.sendFile(path.join(__dirname, "Website","public", req.params.page + ".html")); 
+    res.sendFile(path.join(__dirname, "Website","public", req.params.page + ".html"));
 });
 
 addPostListener("createroom", (res, data) => {
     var code = genChars(5);
-    groupsColl.insertOne({grID:code, userAmt: 0, users:[]}).then( 
+    groupsColl.insertOne({grID:code, userAmt: 0, users:[]}).then(
         () => resp(res, SUC, {grID:code}),                               // Resolved
         () => resp(res, ERR, "Couldn't update database", true));        // Rejected
 });
@@ -78,7 +78,7 @@ addPostListener("joinroom", (res, data) => {
     data.grID = data.grID.toUpperCase();
     if(data.grID.match(/^\w{5}$/) == null)                  // Make sure that they sent id of group they want to join
         return resp(res, ERR, "INVALID grID");
-    
+
     groupsColl.findOne({grID: data.grID}, {userAmt:1})
     .then((d) => {
         if(!d)
@@ -127,67 +127,6 @@ addPostListener("report", (res, data) => {
     .catch((e) => resp(res, ERR, e.message));
 });
 
-/*
-function logTime(data, date, res){
-    var screenStop = date.getTime();
-    var recMinutes = Math.round(data.milli/60000);
-    var currHourMin = 0, lastHourMin = 0;
-    var newRef = ref.child("/" + data.grID +"/users/" + data.id + "/");
-    
-    if(recMinutes < 1)
-        return resp(res, ERR, "Logged time too small. Must log atleast 1 minute (60000 milli)");
-
-    if(date.getMinutes() >= recMinutes){
-        currHourMin = recMinutes;
-        recMinutes = 0;
-    } else {
-        currHourMin = date.getMinutes();
-        recMinutes -= currHourMin;
-    }
-    
-    if(recMinutes > 0){
-        lastHourMin = recMinutes % 60;
-        recMinutes -= lastHourMin;
-    }
-
-    // This code should be optimized by downloading the data first instead of requesting each time
-    // If we want this to be really bullet proof, it should be recursive to make sure no hour's usage exceeds 60 minutes
-    var screenStart = date.getTime() - data.milli;
-    var startDate = new Date(screenStart);
-    log(INFO, "recMinutes: " + recMinutes + ", currHourMin: " + currHourMin + ", lastHourMin: " + lastHourMin);
-    newRef.child("/" + date.getMonth() + "/" + date.getDate() + "/" + date.getHours()).once("value", (snapshot) => {
-        var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
-
-        if(oldValue + currHourMin > 60)
-            return resp(res, ERR, "TIME KEEPING ISSUE, CURRENT HOUR USAGE EXCEEDS 60");
-
-        snapshot.ref.set(oldValue + currHourMin);
-        
-        if(oldValue != 0 && lastHourMin != 0)
-            return resp(res, ERR, "TIME KEEPING ISSUE, TIME SPENT THIS HOUR EXCEEDS ACTUAL TIME");
-
-        if(lastHourMin == 0 && recMinutes == 0)
-            return resp(res, SUC, "UPDATED TIME TABLES");
-
-        newRef.child("/" + startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).once("value", (snapshot) => {
-        var oldValue = ((snapshot.val() == null)? 0 : snapshot.val());
-        snapshot.ref.set(oldValue + lastHourMin);
-
-        if(oldValue + lastHourMin > 60)
-            return resp(res, ERR, "TIME KEEPING ISSUE, LAST HOUR USAGE EXCEEDS 60");
-
-        startDate.add(1).hour();
-        while(recMinutes > 0){
-            newRef.child(startDate.getMonth() + "/" + startDate.getDate() + "/" + startDate.getHours()).set(60);
-            log("INFO", "Adding 1 hour to " + startDate);
-            startDate.add(1).hours();
-            recMinutes -= 60;
-        }
-        return resp(res, SUC, "UPDATED TIME TABLES");
-        });        
-    }); 
-}
-*/
 // Includes start and end date
 addPostListener("view", (res, data) => {
     if(!checkData(res, data, ["grID"]))
@@ -196,7 +135,7 @@ addPostListener("view", (res, data) => {
     var personQuery = {$match: {}};
     if(data.id)
         personQuery = {$match: {id: Number(data.id)}}
-    
+
     var conditions = {$and: []};
     if(data.minTime && !isNaN(Number(data.minTime)))
     {
@@ -207,7 +146,7 @@ addPostListener("view", (res, data) => {
     {
         data.maxTime = Number(data.maxTime);
         conditions.$and.push({$lte: [{$arrayElemAt: ["$$idx", 0]}, data.maxTime]});
-    }    
+    }
     groupsColl.aggregate([
         {$match: {grID: data.grID}},
         {$unwind: {path: "$users", preserveNullAndEmptyArrays: true}},
@@ -226,30 +165,57 @@ addPostListener("view", (res, data) => {
         }
         if(r.length == 0)
             return resp(res, ERR, "Couldn't find group with that ID");
-        
+
         if(!r[0].name)
             return resp(res, ERR, "No one has joined your goup yet.");
-
         for(var x = 0; x < r.length; x++)
         {
-            var c = r[x].times;
-            if(!c)
-                continue;
-            c.sort((a,b) => (a[0] > b[0])? 1: (a[0] == b[0])? 0: -1);
-            
-            if(data.minTime && c[0][0] < data.minTime)
-                c[0] = [data.minTime, Math.floor((c[0][0] + c[0][1]*1000 - data.minTime)/1000)];
-            if(data.maxTime && c[c.length -1][0] + c[c.length -1][1]*1000 > data.maxTime)
-                c[c.length -1][1] = Math.floor(data.maxTime/1000);            
-                
-            var total = 0;
-            for(var y = 0; y < c.length; y++)
-                total += c[y][1];
-            r[x].total = total;
+            r[x] = {
+                    name: r[x].name,
+                    times: formatData(r[x].times, 1)}
         }
+
         resp(res, SUC, r);
     });
 });
+
+function formatData(data, start = getStartDayMilli()) 
+{
+    if (!data)
+        return null;
+    var rtnArr = new Array(24 * fidelity).fill(0); // 24 base hours * the amount of sampling points between hours
+    data.sort((a,b) => (a[0] < b[0])? -1 : (a[0] === b[0])? 0: 1); // Just to make sure it is sorted
+
+    var dataCounter = 0;                  // Keeps track of which array of data we are on
+    var timeRange = 60*60*1000/fidelity;  // The range of time per space of sampling
+
+    mainloop:
+    for(var x = 0; x < rtnArr.length; x ++)
+    {
+        let rangeStart = start + timeRange * x;
+        let rangeEnd = rangeStart + timeRange;
+        let total = 0;
+
+        while(data[dataCounter] && data[dataCounter][0] + data[dataCounter][1] > rangeStart && data[dataCounter][0] < rangeEnd) // end after start and start before end => overlap
+        {
+            let [st, len] = data[dataCounter];
+            if(st + len <= rangeEnd)
+            {
+            total += st + len - Math.max(rangeStart, st);
+            dataCounter++;
+            continue;
+            } else {
+                data[dataCounter][0] = rangeEnd;
+                data[dataCounter][1] -= rangeEnd - st;
+                rtnArr[x] =  rangeEnd - Math.max(st, rangeStart);
+                continue mainloop;
+            }
+        }
+        rtnArr[x] = total;
+    }
+    rtnArr = [0].concat(rtnArr);
+    return rtnArr;
+}
 
 // Create web server
 http.createServer(app).listen(80, function(){
@@ -300,8 +266,6 @@ function resp(res, type, body)
     totalNetworkSend += rtnObjSize;
 
     res.log.trace({type: type, body: body, time: requestTime, size: rtnObjSize});
-    //log((er)? ERROR : (type == ERR)? WARN: INFO, ((typeof(body) == "object")? JSON.stringify(body) : body) + 
-    //" [Size: " + rtnObjSize + "] [RequestTime:"+ requestTime +"ms]");
 }
 
 function checkData(res, data, args)
