@@ -216,6 +216,10 @@ function formatData(data, start = getStartDayMilli())
     rtnArr = [0].concat(rtnArr);
     return rtnArr;
 }
+function getStartDayMilli() {
+    var d = new Date();
+    return d.getTime() - d.getHours() * 60 * 60000 - d.getMinutes() * 60000 - d.getSeconds() * 1000 - d.getMilliseconds();
+}
 
 // Create web server
 http.createServer(app).listen(80, function(){

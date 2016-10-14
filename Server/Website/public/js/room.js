@@ -1,9 +1,6 @@
 // Data is the data from the server per user, fidelity is the x-variable stepping rate by minutes
 "use strict"
-function getStartDayMilli() {
-    var d = new Date();
-    return d.getTime() - d.getHours() * 60 * 60000 - d.getMinutes() * 60000 - d.getSeconds() * 1000 - d.getMilliseconds();
-}
+
 
 var colors = ["255, 99, 132", "75, 198, 172", "173, 120, 195", "237, 208, 64", "223, 130, 18"];
 
