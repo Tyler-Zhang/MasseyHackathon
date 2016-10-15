@@ -42,16 +42,9 @@ var app = express();
 app.use(express.static(path.join(__dirname, "Website", "public")));
 
 // Load room template
-var roomTemplate;
+var roomTemplate =  dot.template(fs.readFileSync(path.join(__dirname, "Website", "room.html"), "utf8"));
+var createTemplate = dot.template(fs.readFileSync(path.join(__dirname, "Website", "create.html"), "utf8"));
 
-fs.readFile(path.join(__dirname, "Website", "room.html"), "utf8", (err, d) => {
-    if(err)
-    {
-        log.fatal(err);
-        throw err;
-    }
-    roomTemplate = dot.template(d);
-});
 
 // Apply template
 function getRoom(req, res) {
@@ -59,17 +52,24 @@ function getRoom(req, res) {
     res.end(roomTemplate(data));
 }
 
+function createRoom(req, res)
+{
+    var code = genChars(5);
+    groupsColl.insertOne({grID:code, userAmt: 0, users:[]}).then(
+        () => res.end(createTemplate({grID: code, link: "/room?grID=" +code}))),                               // Resolved
+        () => res.end(createTemplate({grID: "Error", link: ""}));        // Rejected
+}
+
 app.get("/room", getRoom);
 app.get("/room.html", getRoom);
+app.get("/create", createRoom);
+app.get("/create.html", createRoom);
 app.get("/:page", function(req, res){
     res.sendFile(path.join(__dirname, "Website","public", req.params.page + ".html"));
 });
 
 addPostListener("createroom", (res, data) => {
-    var code = genChars(5);
-    groupsColl.insertOne({grID:code, userAmt: 0, users:[]}).then(
-        () => resp(res, SUC, {grID:code}),                               // Resolved
-        () => resp(res, ERR, "Couldn't update database", true));        // Rejected
+    
 });
 
 addPostListener("joinroom", (res, data) => {

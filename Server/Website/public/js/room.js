@@ -15,8 +15,6 @@ function makeCharts(data) {
     var accumDataset = [], totalDayDataset = [];
     data = data.body;
 
-    
-
     for (var x = 1; x <= 23; x++)
     {
         for(let y = 0; y < fidelity - 1; y ++)  // Add blank spaces
