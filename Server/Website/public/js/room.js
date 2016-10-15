@@ -36,13 +36,14 @@ function makeCharts(data) {
 
         for(let y = 1; y < data[x].times.length; y ++)
         {
-        total += data[x].times[y];                   // Keeps running total for max scale
-        displayArr[y] = displayArr[y-1] + Math.round((data[x].times[y]/6000)) / 10;         // Sum so far
-        console.log(displayArr);
+            displayArr[y] = Math.round((total +data[x].times[y])/6000) / 10;
+            total += data[x].times[y];                   // Keeps running total for max scale
+            
         }
         total = Math.round(total/6000) /10;
 
         max = Math.max(max, total);
+        max = Math.ceil(max/ 100) * 100;
         accumDataset.push(new datasetObj(data[x].name, displayArr, colors[x], "line"));
         nameLabels.push(data[x].name);
         totalDayDataset.push(new datasetObj(data[x].name, genArray(x, data.length, total), colors[x], "bar"));

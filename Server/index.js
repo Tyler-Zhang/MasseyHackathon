@@ -21,7 +21,7 @@ var totalNetworkRecieve = 0;    // Stores the total input in size of kb
 var hitCounter = 0;             // Stores how many times the server has been hit
 var totalRequestTime = 0;       // Stores the total amount of time it has taken for the server to resolve the request
 var debugMode = true;
-var fidelity = 4;
+var fidelity = 1;
 
 // Database declaration and functions
 var groupsColl, timesColl;
@@ -102,7 +102,7 @@ addPostListener("report", (res, data) => {
         return;
     data.grID = data.grID.toUpperCase();
     var date = data.time || new Date().getTime();
-    var length = Number(data.milli);
+    var length = Math.round(data.milli);
     var date = Number(date);
     if(length  === 0 || isNaN(length) || isNaN(date))
         return resp(res, ERR, "time elpased can't be 0 milliseconds");
@@ -173,7 +173,7 @@ addPostListener("view", (res, data) => {
         {
             r[x] = {
                     name: r[x].name,
-                    times: formatData(r[x].times, 1)}
+                    times: formatData(r[x].times)}
         }
 
         resp(res, SUC, r);
@@ -190,29 +190,36 @@ function formatData(data, start = getStartDayMilli())
     var dataCounter = 0;                  // Keeps track of which array of data we are on
     var timeRange = 60*60*1000/fidelity;  // The range of time per space of sampling
 
-    mainloop:
     for(var x = 0; x < rtnArr.length; x ++)
     {
         let rangeStart = start + timeRange * x;
         let rangeEnd = rangeStart + timeRange;
         let total = 0;
-
-        while(data[dataCounter] && data[dataCounter][0] + data[dataCounter][1] > rangeStart && data[dataCounter][0] < rangeEnd) // end after start and start before end => overlap
+        //console.log(`DataCounter: ${dataCounter} RangeStart: ${rangeStart} Start: ${data[dataCounter][0]} RangeEnd: ${rangeEnd} End: ${data[dataCounter][0] + data[dataCounter][1] }
+         //${dataCounter < data.length && data[dataCounter][0] + data[dataCounter][1] > rangeStart && data[dataCounter][0] < rangeEnd}`);
+        
+        for(var idx = dataCounter; idx < data.length; idx ++)
         {
-            let [st, len] = data[dataCounter];
-            if(st + len <= rangeEnd)
+            var [st, len] = data[idx];
+            if(st >= rangeEnd)
+                break;
+            if(st + len <= rangeStart)
             {
-            total += st + len - Math.max(rangeStart, st);
-            dataCounter++;
-            continue;
-            } else {
-                data[dataCounter][0] = rangeEnd;
-                data[dataCounter][1] -= rangeEnd - st;
-                rtnArr[x] =  rangeEnd - Math.max(st, rangeStart);
-                continue mainloop;
+                dataCounter++;
+                break;
             }
+            if(st >= rangeStart && st + len <= rangeEnd)
+            {
+                total += len;
+                dataCounter++;
+                continue;
+            }
+            data[dataCounter][0] = rangeEnd;
+            data[dataCounter][1] -= rangeEnd - st;
+            total +=  rangeEnd - Math.max(st, rangeStart);
         }
         rtnArr[x] = total;
+        
     }
     rtnArr = [0].concat(rtnArr);
     return rtnArr;
