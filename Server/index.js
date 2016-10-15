@@ -68,28 +68,6 @@ app.get("/:page", function(req, res){
     res.sendFile(path.join(__dirname, "Website","public", req.params.page + ".html"));
 });
 
-<<<<<<< HEAD
-        if(data.type == 'computer'){                            // If the device type is a computer
-            ref.child("/" + code).update({                      // Create the group object on firebase
-                userAmt: 0,                                     // Amount of people in the group 
-            });
-            resp(res, SUC,  {grID: code})
-        } else if(data.type == "android"){                                                // If request type is an android device
-            if(!checkData(res, data, ["name"]))
-                return;
-            ref.child("/" + code).update({
-                userAmt: 1,
-                users: {
-                    0: {name: data.name}                        // Create the group with one user inplace
-                }
-            });
-            resp(res, SUC, {grID: code, id: 0});
-        } else {
-            resp(res, ERR, "MUST SPECIFY DEVICE AS EITHER COMPUTER OR ANDROID");
-            return;
-        }
-        log(INFO, "Created new room with code: "+ code + " Type: " + data.type);
-=======
 addPostListener("joinroom", (res, data) => {
     if(!checkData(res, data, ["grID", "name"]))
         return;
@@ -109,7 +87,6 @@ addPostListener("joinroom", (res, data) => {
     .then((d) => {
         var setObj = {name: data.name, times: d.tId};
         return groupsColl.updateOne({_id:d._id}, {$push:{users: setObj}}, {upsert:true}).then(() => d);
->>>>>>> refs/remotes/origin/Change-Database-To-Mongo
     })
     .then((d) =>  groupsColl.updateOne({_id: d._id}, {$set: {userAmt: d.userAmt + 1}}).then(() => d.userAmt))
     .then((d) =>  resp(res, SUC, {id: d}))
@@ -122,7 +99,7 @@ addPostListener("report", (res, data) => {
     data.grID = data.grID.toUpperCase();
     var date = data.time || new Date().getTime();
     var length = Math.round(data.milli);
-    var date = Number(date);
+    var date = Math.round(date);
     if(length  === 0 || isNaN(length) || isNaN(date))
         return resp(res, ERR, "time elpased can't be 0 milliseconds");
     var id = Number(data.id);
@@ -194,7 +171,6 @@ addPostListener("view", (res, data) => {
                     name: r[x].name,
                     times: formatData(r[x].times)}
         }
-
         resp(res, SUC, r);
     });
 });
