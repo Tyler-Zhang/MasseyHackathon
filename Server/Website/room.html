@@ -8,13 +8,10 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title> ScreenOff </title>
-    
+    <title> {{=it.grID}} Stats </title>
+
     <!-- Bootstrap Core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
-    <link href="css/grayscale.css" rel="stylesheet">
 
     <!-- Custom Fonts -->
     <link href="font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
@@ -27,13 +24,25 @@
         <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+    <style>
+        .infoBlock {
+            box-shadow: 0 -1px 0 #e0e0e0,0 0 2px rgba(0,0,0,.12),0 2px 4px rgba(0,0,0,.24) !important;
+            background-color: white !important;
+            border-radius: 25px;
+        }
+    </style>
 </head>
-<body class="container-fluid">
-    <div class="row">
-        <h1 id="heading" class="text-center" style="margin-top: 50px; margin-bottom:50px; font-weight:bold; font-size:62px; color:white"></h1>
+<body class="container-fluid" style="background-color:#f2f2f2">
+    <div class="row" style="background-color:#4285f4; margin-bottom:30px;">
+        <div class="col-xs-1">
+            <p id="status" class="text-center" style="color:white"></p>
+        </div>
+        <div class="col-md-10">
+        <h1 id="heading" class="text-center" style="margin-top: 10px; margin-bottom:10px; font-weight:bold; font-size:62px; color:white">{{=it.grID}}</h1>
+        </div>
     </div>
     <div class="row">
-        <div class="col-md-10 col-md-offset-1 bg-info">
+        <div class="col-md-10 col-md-offset-1 infoBlock">
             <div class="col-md-7">
                 <canvas id="acumDayChart"></canvas>
             </div>
@@ -43,35 +52,28 @@
     </div>
 
     <script src="js/main.js"></script>
-    <script src="js/postReqDef.js"></script>
     <!-- jQuery -->
     <script src="js/jquery.js"></script>
-    
+
     <!-- Bootstrap Core JavaScript -->
     <script src="js/bootstrap.min.js"></script>
 
     <!-- Plugin JavaScript -->
     <script src="js/jquery.easing.min.js"></script>
 
-    <script src="js/main.js"></script>
+    <script src="js/room.js"></script>
     <script src="js/chart.js"></script>
     <script>
+    var fidelity = {{=it.fidelity}};
     function init(){
-        console.log(document.getElementById("totalDayChart").getContext("2d").canvas.height);
-        var arr = document.URL.match(/grID=(.*)/);
-        if(arr == null || !arr.hasOwnProperty("1"))
-        {
-            displayError("URL formatted wrong");
-            return;
-        }
-        var room = arr[1];
-        console.log("Making request with " + room);
-        setInner("heading", "Usage for room " + room);
-        
-        postRequest("/view", {grID: room}, (obj) => {
+        setInner("status", "Getting Data");
+
+        postRequest("/view", {grID: "{{=it.grID}}"}, (obj) => {
+
+            setInner("status", "Data recieved");
             if(obj.type == "ERROR")
                 displayError(obj.body);
-            else if(obj.body.userAmt == 0)
+            else if(!obj.body || obj.body.userAmt == 0)
                 displayError("There are no people added to your group yet");
             else {
                 makeCharts(obj);

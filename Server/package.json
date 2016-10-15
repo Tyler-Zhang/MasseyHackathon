@@ -4,14 +4,13 @@
   "description": "Backend for the screenoff ecosystem",
   "main": "index.js",
   "dependencies": {
-    "chart.js": "^2.1.6",
+    "bunyan": "^1.8.1",
     "datejs": "^1.0.0-rc3",
-    "express": "^4.13.4",
-    "firebase": "^3.1.0",
+    "dot": "^1.0.3",
+    "express": "^4.14.0",
+    "mongodb": "^2.2.10",
+    "object-sizeof": "^1.1.1",
     "path": "^0.12.7"
-  },
-  "devDependencies": {
-    "object-sizeof": "^1.0.10"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

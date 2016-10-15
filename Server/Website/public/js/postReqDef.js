@@ -2,8 +2,7 @@ var urlDefinition ={
     "/createroom":{
         desc: "For creating a new room",
         attr: {
-            names: ["type", "name"],
-            req: [true, false]
+            
         }    
     },
     "/joinroom":{
@@ -23,7 +22,7 @@ var urlDefinition ={
     "/view":{
         desc: "Getting screen on data",
         attr: {
-            names: ["grID", "id", "startDate", "endDate"],
+            names: ["grID", "id", "minTime", "maxTime"],
             req: [true, false, false, false]
         }    
     },
@@ -60,12 +59,12 @@ var attrDefinition = {
         desc: "Time when the screen-on session ended, used for reporting offline tracks",
         opt: "UTC time in milliseconds"
     },
-    startDate :{
-        desc: "The beginning, <em> inclusive </em>, time of data to be returned. Only used when id is specified",
-        opt: "Month/Day - Months start at 0"
+    minTime :{
+        desc: "The beginning, <em> inclusive </em>, time of data to be returned",
+        opt: "Date in milliseconds new Date().getTime()"
     },
-    endDate :{
-        desc: "The ending, <em> inclusive </em>, time of data to be returned. Only used when id is specified",
-        opt: "Month/Day - Months start at 0"
+    maxTime :{
+        desc: "The ending, <em> inclusive </em>, time of data to be returned",
+        opt: "Date in milliseconds new Date().getTime()"
     }
 }
