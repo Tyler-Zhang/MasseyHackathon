@@ -102,9 +102,10 @@ addPostListener("report", (res, data) => {
         return;
     data.grID = data.grID.toUpperCase();
     var date = data.time || new Date().getTime();
-    var length = Math.floor(data.milli/1000);
-    if(length  == 0)
-        return resp(res, SUC, "Not logging any time less than 1 second");
+    var length = Number(data.milli);
+    var date = Number(date);
+    if(length  === 0 || isNaN(length) || isNaN(date))
+        return resp(res, ERR, "time elpased can't be 0 milliseconds");
     var id = Number(data.id);
     if(isNaN(id))
         return resp(res, ERR, "ID must be a number");
