@@ -1,0 +1,4 @@
+- Create past week view
+- Show statistics (like increase from week to week)
+- Program that checks integrity of database, perhaps even delete unused entries
+- Implement sexy GSAP notifications rather than alert() calls

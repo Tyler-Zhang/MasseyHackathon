@@ -46,7 +46,7 @@ var roomTemplate =  dot.template(fs.readFileSync(path.join(__dirname, "Website",
 var createTemplate = dot.template(fs.readFileSync(path.join(__dirname, "Website", "create.html"), "utf8"));
 
 
-// Apply template
+// Apply templates
 function getRoom(req, res) {
     var data = {grID:req.query.grID, fidelity};
     res.end(roomTemplate(data));
@@ -66,10 +66,6 @@ app.get("/create", createRoom);
 app.get("/create.html", createRoom);
 app.get("/:page", function(req, res){
     res.sendFile(path.join(__dirname, "Website","public", req.params.page + ".html"));
-});
-
-addPostListener("createroom", (res, data) => {
-    
 });
 
 addPostListener("joinroom", (res, data) => {
