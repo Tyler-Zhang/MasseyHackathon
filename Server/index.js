@@ -187,7 +187,7 @@ function formatData(data, start = getStartDayMilli())
 
     for(var x = 0; x < rtnArr.length; x ++)
     {
-        let rangeStart = start + timeRange * x;
+        let rangeStart = start + (timeRange * x);
         let rangeEnd = rangeStart + timeRange;
         let total = 0;
         //console.log(`DataCounter: ${dataCounter} RangeStart: ${rangeStart} Start: ${data[dataCounter][0]} RangeEnd: ${rangeEnd} End: ${data[dataCounter][0] + data[dataCounter][1] }
@@ -221,7 +221,7 @@ function formatData(data, start = getStartDayMilli())
 }
 function getStartDayMilli() {
     var d = new Date();
-    return d.getTime() - d.getHours() * 60 * 60000 - d.getMinutes() * 60000 - d.getSeconds() * 1000 - d.getMilliseconds();
+    return d.getTime() - d.getUTCHours() * 60 * 60000 - d.getUTCMinutes() * 60000 - d.getUTCSeconds() * 1000 - d.getUTCMilliseconds();
 }
 
 // Create web server
