@@ -1,12 +1,13 @@
-var http =      require("http");            // Launching the HTML server
-var express =   require("express");         // Handling get/post requests
-var path =      require("path");            // Joing paths
-var sizeOf =    require("object-sizeof");   // Checking object of a javascript object
-var fs =        require("fs");              // Reading and writing files
-var dot =       require("dot");             // Superfast HTML templating engine
-var mongoCli =  require("mongodb")          // Connecting to the mongo Database
+const https =     require('https');           // Launching the secure http server
+const http =      require("http");            // Launching the HTML server
+const express =   require("express");         // Handling get/post requests
+const path =      require("path");            // Joing paths
+const sizeOf =    require("object-sizeof");   // Checking object of a javascript object
+const fs =        require("fs");              // Reading and writing files
+const dot =       require("dot");             // Superfast HTML templating engine
+const mongoCli =  require("mongodb")          // Connecting to the mongo Database
 .MongoClient;
-var log =       require("bunyan")           // Logging library
+const log =       require("bunyan")           // Logging library
 .createLogger({
     name: "ScreenOff",
     streams: [
@@ -14,14 +15,14 @@ var log =       require("bunyan")           // Logging library
         {level: "warn", path: "logs.log"}
     ]});
 require("datejs");                          // Extension to Date() for better date handling
+const config =    require("./config");        // Get configuration settings
 
 // Usage Variables
 var totalNetworkSend = 0;       // Stores the total output in size of kb
 var totalNetworkRecieve = 0;    // Stores the total input in size of kb
 var hitCounter = 0;             // Stores how many times the server has been hit
 var totalRequestTime = 0;       // Stores the total amount of time it has taken for the server to resolve the request
-var debugMode = true;
-var fidelity = 1;
+var fidelity = config.fidelity; // How 
 
 // Database declaration and functions
 var groupsColl, timesColl;
@@ -39,11 +40,10 @@ mongoCli.connect("mongodb://localhost:27017/ScreenOff", (err, d) => {
 });
 // Default express directory
 var app = express();
-app.use(express.static(path.join(__dirname, "Website", "public")));
 
 // Load room template
-var roomTemplate =  dot.template(fs.readFileSync(path.join(__dirname, "Website", "room.html"), "utf8"));
-var createTemplate = dot.template(fs.readFileSync(path.join(__dirname, "Website", "create.html"), "utf8"));
+var roomTemplate =  dot.template(fs.readFileSync(path.join(__dirname, "website", "room.html"), "utf8"));
+var createTemplate = dot.template(fs.readFileSync(path.join(__dirname, "website", "create.html"), "utf8"));
 
 
 // Apply templates
@@ -60,12 +60,13 @@ function createRoom(req, res)
         () => res.end(createTemplate({grID: "Error", link: ""}));        // Rejected
 }
 
+app.use(express.static(path.join(__dirname, "website", "public")));
 app.get("/room", getRoom);
 app.get("/room.html", getRoom);
 app.get("/create", createRoom);
 app.get("/create.html", createRoom);
 app.get("/:page", function(req, res){
-    res.sendFile(path.join(__dirname, "Website","public", req.params.page + ".html"));
+    res.sendFile(path.join(__dirname, "website","public", req.params.page + ".html"));
 });
 
 addPostListener("joinroom", (res, data) => {
@@ -225,9 +226,27 @@ function getStartDayMilli() {
 }
 
 // Create web server
-http.createServer(app).listen(80, function(){
-    log.info("The server has been opened on port 80");
-});
+if(!config.https) 
+{
+    http.createServer(app).listen(80, function(){
+        log.info("The server has been opened on port 80");
+    });
+} else {
+    const options = {
+        key: fs.readFileSync(config.httpsKeyPath),
+        cert: fs.readFileSync(config.httpsCertPath)
+    }
+    
+    https.createServer(options, app).listen(443, ()=>{
+        log.info("The HTTPS server has been opened on port 443");
+    });
+
+    http.createServer(express().use((req, res) => {
+        res.redirect('https://' + req.headers.host + req.url);
+    })).listen(80, () => {
+        log.info("The HTTP server has opened on port 80, redirecting all users to HTTPS");
+    });
+}
 
 // Network Functions
 function addPostListener(URL, callBack)

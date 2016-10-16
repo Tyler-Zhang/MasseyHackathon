@@ -2,4 +2,6 @@ node_modules
 jsonAuth.json
 **/*.log
 .idea
-/Server/Data
+/Server/data
+/Server/https
+/Server/config.js
