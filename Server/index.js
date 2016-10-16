@@ -284,7 +284,7 @@ function resp(res, type, body)
         body: body
     };
     var requestTime = new Date().getTime() - res.startTime.getTime();
-    if(debugMode)
+    if(config.debugMode)                                                // if in debug mode, return obj size too
         rtnObj.responseTime = requestTime;
     res.json(rtnObj);
     totalRequestTime += requestTime;
